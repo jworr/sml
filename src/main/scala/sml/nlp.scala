@@ -1,3 +1,5 @@
+package sml
+
 import scala.xml.{Node}
 import scala.xml.XML.{loadFile}
 import scala.collection.immutable.TreeMap
@@ -6,14 +8,14 @@ import scala.collection.Map
 import grph.in_memory._
 import grph.Grph
 
-import io.baseName
+import sml.io.baseName
 
 /**
 A library to load core nlp xml into objects
 */
 object nlp
 {
-	class Document(documentId: String, docSentences: Seq[Sentence])
+	class Document(documentId: String, docSentences: Seq[Sentence], coref: Seq[CorefGroup])
 	{
 		val id = documentId
 		val contents = docSentences 
@@ -21,6 +23,7 @@ object nlp
 		//define some getters
 		def docId : String = id
 		def sentences : Seq[Sentence] = contents
+		def corefGroups : Seq[CorefGroup] = coref
 
 		/*Returns the sentence specified by sentence id*/
 		def sentenceById(sentenceId: Int) : Sentence = contents(sentenceId -1)
@@ -43,13 +46,13 @@ object nlp
 		/**
 		Returns all the tokens with the given dependency type
 		*/
-		def tokensWithType(depType: String): Iterable[Token] =
+		def tokensWithType(depType: String): Seq[Token] =
 		{
 			//get edges with the correct type, then get the end vertex of the edge, then look up the Token
-			edgeTypes.filter((kv) => (kv._2 == depType)).map((kv) => (kv._1._2)).map(tokMap)
+			edgeTypes.filter((kv) => (kv._2 == depType)).map((kv) => (kv._1._2)).map(tokMap).toSeq
 		}
 
-		def hasDepType(token: Token, depType: String): Boolean = tokenswithType(depType).contains(token)
+		def hasDepType(token: Token, depType: String): Boolean = tokensWithType(depType).contains(token)
 
 		def isSubject( token: Token ): Boolean = hasDepType(token, "subj")
 
@@ -69,7 +72,8 @@ object nlp
 	/**
 	Represents an annotated Token in a Document
 	*/
-	class Token(tokenId: Int, _sentenceId: Int, _word: String, _lemma: String, _start: Int, _end: Int, _pos: String, _ner:String) extends Ordered[Token]
+	class Token(tokenId: Int, _sentenceId: Int, _word: String, _lemma: String, _start: Int, _end: Int, _pos: String, _ner:String) 
+	extends Ordered[Token]
 	{
 		val id = tokenId
 		val sentenceId = _sentenceId
@@ -127,6 +131,32 @@ object nlp
 	}
 
 	/**
+	Represents a mention of an entity in a coref group
+	*/
+	class Mention(sentenceId: Int, span: Range, head: Int)
+	{
+		/**
+		Returns true if the token is contained in the mention's span
+		*/
+		def contains(token: Token): Boolean = span.contains(token.id)
+
+		override def toString = sentenceId.toString + ": " + span.mkString(",")
+	}
+
+	/**
+	Represents a group of entity mentions that refer to the same entity
+	*/
+	class CorefGroup(mentions: Seq[Mention], cannonical: Mention)
+	{
+		/**
+		Returns true if the token is apart of a mention in the set
+		*/
+		def inGroup(token: Token): Boolean = !mentions.find((m) => m.contains(token)).isEmpty
+
+		override def toString = "Coref Group:\n" + mentions.mkString("\n")
+	}
+
+	/**
 	Builds a graph from the dependency xml node
 	*/
 	def buildGraph(node: Node): (Grph, Map[(Int, Int),String]) =
@@ -165,7 +195,10 @@ object nlp
 		//parse all the sentences
 		val sentences = (xmlDoc \\ "sentences" \ "sentence").map(parseSentence)
 
-		new Document(baseName(fileName), sentences)
+		//parse out all the coref groups
+		val coref = (xmlDoc \ "root" \ "document" \ "coreference" \ "coreference").map(parseCoref)
+
+		new Document(baseName(fileName), sentences, coref)
 	}
 
 	/**
@@ -183,6 +216,37 @@ object nlp
 		val graphInfo = buildGraph((node \ "dependencies").filter((n:Node) => ((n \ "@type")(0).text == "basic-dependencies"))(0))
 
 		new Sentence(id, toks, graphInfo._1, graphInfo._2)
+	}
+
+	/**
+	Parses the co-reference information out of the xml node
+	*/
+	def parseCoref(node: Node): CorefGroup =
+	{
+		//parse out all the mentions
+		var mentions = (node \ "mention").map(parseMention)
+
+		var head = mentions.find((m) => m._2).get
+
+		new CorefGroup(mentions.map(_._1), head._1)
+	}
+
+	/**
+	Parse a mention out
+	*/
+	def parseMention(node: Node): (Mention,Boolean) =
+	{
+		//parse the sentence id
+		val sentenceId = parseField(node, "sentence").toInt
+
+		//parse the span
+		val span = Range(parseField(node,"start").toInt, parseField(node,"end").toInt+1)
+
+		//parse the head
+		val head = parseField(node, "head").toInt
+
+		//parse out if it is primary mention
+		(new Mention(sentenceId, span, head), parseField(node, "@representative").toBoolean)
 	}
 
 	/**
@@ -207,10 +271,18 @@ object nlp
 	*/
 	def main(args: Array[String])
 	{
+		val doc = parseDoc(args(0))
+
 		//print out all the sentences
-		for( sentence <- parseDoc(args(0)).sentences )
+		for( sentence <- doc.sentences )
 		{
 			println(sentence)		
+		}
+
+		//print out all the coref groups
+		for( group <- doc.corefGroups )
+		{
+			println(group)
 		}
 	}
 }

@@ -1,3 +1,5 @@
+package sml
+
 import java.nio.file._
 
 object io
