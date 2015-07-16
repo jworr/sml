@@ -15,28 +15,18 @@ A library to load core nlp xml into objects
 */
 object nlp
 {
-	class Document(documentId: String, docSentences: Seq[Sentence], coref: Seq[CorefGroup])
+	class Document(val id: String, val sentences: Seq[Sentence], val corefGroups: Seq[CorefGroup])
 	{
-		val id = documentId
-		val contents = docSentences 
-
-		//define some getters
-		def docId : String = id
-		def sentences : Seq[Sentence] = contents
-		def corefGroups : Seq[CorefGroup] = coref
-
 		/*Returns the sentence specified by sentence id*/
-		def sentenceById(sentenceId: Int) : Sentence = contents(sentenceId -1)
+		def sentenceById(sentenceId: Int) : Sentence = sentences(sentenceId -1)
 	}
 
 	/**
 	Represents a Sentence in a Document
 	*/
-	class Sentence(sentenceId: Int, allTokens: Seq[Token], dependencyGraph: Grph, edges: Map[(Int,Int), String])
+	class Sentence(val id: Int, allTokens: Seq[Token], val dependencyGraph: Grph, edges: Map[(Int,Int), String])
 	{
-		val id = sentenceId
 		val tokMap: TreeMap[Int,Token] = TreeMap(allTokens.map( (t:Token) => (t.id,t) ):_*)
-		val depGraph = dependencyGraph
 		val edgeTypes = edges
 
 		def tokens: Iterable[Token] = tokMap.values
@@ -72,18 +62,9 @@ object nlp
 	/**
 	Represents an annotated Token in a Document
 	*/
-	class Token(tokenId: Int, _sentenceId: Int, _word: String, _lemma: String, _start: Int, _end: Int, _pos: String, _ner:String) 
+	class Token(val id: Int, val sentenceId: Int, val word: String, val lemma: String, val start: Int, val end: Int, val pos: String, val ner:String) 
 	extends Ordered[Token]
 	{
-		val id = tokenId
-		val sentenceId = _sentenceId
-		val word = _word
-		val lemma = _lemma
-		val start = _start
-		val end = _end
-		val pos = _pos
-		val ner = _ner
-
 		def isVerb = pos.contains("V")
 
 		def isNoun = pos.contains("N")
@@ -115,11 +96,11 @@ object nlp
 		*/
 		def compare(that: Token): Int = 
 		{
-			val comp = sentenceId.compare(that.sentenceId)
+			val comp = this.sentenceId.compare(that.sentenceId)
 			
 			//if the sentences are the same
 			if (comp == 0)
-				return id.compare(that.id)
+				return this.id.compare(that.id)
 			else
 				return comp
 		}
@@ -133,7 +114,7 @@ object nlp
 	/**
 	Represents a mention of an entity in a coref group
 	*/
-	class Mention(sentenceId: Int, span: Range, head: Int)
+	class Mention(val sentenceId: Int, val span: Range, val head: Int)
 	{
 		/**
 		Returns true if the token is contained in the mention's span
@@ -146,7 +127,7 @@ object nlp
 	/**
 	Represents a group of entity mentions that refer to the same entity
 	*/
-	class CorefGroup(mentions: Seq[Mention], cannonical: Mention)
+	class CorefGroup(val mentions: Seq[Mention], val cannonical: Mention)
 	{
 		/**
 		Returns true if the token is apart of a mention in the set
