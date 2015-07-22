@@ -19,6 +19,18 @@ object nlp
 	{
 		/*Returns the sentence specified by sentence id*/
 		def sentenceById(sentenceId: Int) : Sentence = sentences(sentenceId -1)
+
+		/**
+		Returns the tokens associated with the mention
+		*/
+		def mentionTokens(mention:Mention): Iterable[Token] =
+		{
+			//get the sentence
+			val sentence = sentenceById(mention.sentenceId)
+
+			//look up all the tokens
+			mention.span.map(i => sentence.tokenById(i))
+		}
 	}
 
 	/**
