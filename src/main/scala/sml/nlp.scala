@@ -5,8 +5,6 @@ import scala.xml.XML.{loadFile}
 import scala.collection.immutable.TreeMap
 import scala.collection.mutable.HashMap
 import scala.collection.Map
-import grph.in_memory._
-import grph.Grph
 
 import sml.io.baseName
 
@@ -36,7 +34,7 @@ object nlp
 	/**
 	Represents a Sentence in a Document
 	*/
-	class Sentence(val id: Int, allTokens: Seq[Token], val dependencyGraph: Grph, edges: Map[(Int,Int), String])
+	class Sentence(val id: Int, allTokens: Seq[Token], edges: Map[(Int,Int), String])
 	{
 		val tokMap: TreeMap[Int,Token] = TreeMap(allTokens.map( (t:Token) => (t.id,t) ):_*)
 		val edgeTypes = edges
@@ -152,10 +150,9 @@ object nlp
 	/**
 	Builds a graph from the dependency xml node
 	*/
-	def buildGraph(node: Node): (Grph, Map[(Int, Int),String]) =
+	def buildGraph(node: Node): Map[(Int, Int),String] =
 	{
 		//create graph
-		val graph = new InMemoryGrph()
 		val edgeType = new HashMap[(Int, Int),String]()
 		var edge = 0
 
@@ -167,14 +164,11 @@ object nlp
 			val end = (dep \ "dependent" \ "@idx").text.toInt
 			val eType = (dep \\ "@type").text
 
-			//add an edge
-			graph.addDirectedSimpleEdge(start, edge, end)
-
 			//add the edge type
 			edgeType += ((start,end) -> eType)
 		}
 		
-		return (graph, edgeType)
+		return edgeType
 	}
 
 	/**
@@ -206,9 +200,9 @@ object nlp
 		val toks = (node \\ "token").map( (t:Node) => parseToken(id,t) )
 
 		//parse out the dependency graph
-		val graphInfo = buildGraph((node \ "dependencies").filter((n:Node) => ((n \ "@type")(0).text == "basic-dependencies"))(0))
+		val edges = buildGraph((node \ "dependencies").filter((n:Node) => ((n \ "@type")(0).text == "basic-dependencies"))(0))
 
-		new Sentence(id, toks, graphInfo._1, graphInfo._2)
+		new Sentence(id, toks, edges)
 	}
 
 	/**
