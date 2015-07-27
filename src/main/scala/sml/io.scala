@@ -1,6 +1,7 @@
 package sml
 
 import java.nio.file._
+import java.io.File
 
 object io
 {
@@ -47,6 +48,13 @@ object io
 	def parent(path: String): String = parent(Paths.get(path))
 
 	def parent(path: Path): String = path.getParent.toString
+
+	/**
+	Returns all the files in the given directory
+	*/
+	def ls(path:String): Iterable[String] = new File(path).listFiles.map(_.toString)
+	
+	def ls(path:Path): Iterable[String] = ls(path.toString)
 
 	/*No idea why this won't work
 	def join(paths: String*): String =

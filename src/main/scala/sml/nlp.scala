@@ -6,7 +6,7 @@ import scala.collection.immutable.TreeMap
 import scala.collection.mutable.HashMap
 import scala.collection.Map
 
-import sml.io.baseName
+import sml.io.{baseName,ls}
 
 /**
 A library to load core nlp xml into objects
@@ -29,6 +29,14 @@ object nlp
 			//look up all the tokens
 			mention.span.map(i => sentence.tokenById(i))
 		}
+
+		/**
+		Returns tokens from the document
+		*/
+		def tokens(sentenceId:Int, span:Range): Iterable[Token] =
+		{
+			sentenceById(sentenceId).tokensById(span)
+		}
 	}
 
 	/**
@@ -43,6 +51,8 @@ object nlp
 
 		def tokenById(tokenId: Int): Token = tokMap(tokenId)
 
+		def tokensById(span:Range): Iterable[Token] = tokens.filter(t => span.contains(t.id))
+
 		/**
 		Returns all the tokens with the given dependency type
 		*/
@@ -50,6 +60,11 @@ object nlp
 		{
 			//get edges with the correct type, then get the end vertex of the edge, then look up the Token
 			edgeTypes.filter((kv) => (kv._2 == depType)).map((kv) => (kv._1._2)).map(tokMap).toSeq
+		}
+
+		def depType(token:Token): String =
+		{
+			edgeTypes.filter(e => (e._1._2 == token.id)).head._2
 		}
 
 		def hasDepType(token: Token, depType: String): Boolean = tokensWithType(depType).contains(token)
@@ -172,6 +187,11 @@ object nlp
 	}
 
 	/**
+	Loads all the annotated documents from a directory
+	*/
+	def loadDocs(dirName:String): Iterable[Document] = ls(dirName).map(parseDoc)
+	
+	/**
 	Returns a document parsed from an xml file
 	*/
 	def parseDoc(fileName: String): Document =
@@ -185,7 +205,7 @@ object nlp
 		//parse out all the coref groups
 		val coref = (xmlDoc \ "root" \ "document" \ "coreference" \ "coreference").map(parseCoref)
 
-		new Document(baseName(fileName), sentences, coref)
+		new Document(removeSuffix(baseName(fileName)), sentences, coref)
 	}
 
 	/**
@@ -253,6 +273,11 @@ object nlp
 	*/
 	def parseField(node: Node, field: String): String = (node \ field).text
 
+	/**
+	Removes the file extension suffix from a doc id
+	*/
+	def removeSuffix(docId:String):String = docId.substring(0, docId.indexOf(".sgm.xml"))
+	
 	/**
 	Main Function to run a simple test
 	*/
