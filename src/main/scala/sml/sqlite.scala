@@ -1,4 +1,4 @@
-package sml.db
+package sml
 
 import java.sql.DriverManager
 import java.sql.Connection
@@ -14,6 +14,6 @@ object sqlite
 		Class.forName("org.sqlite.JDBC")
 
 		//return a new Connection
-		DriverManager.getConnection(dbPath)
+		DriverManager.getConnection("jdbc:sqlite:"+dbPath)
 	}
 }
