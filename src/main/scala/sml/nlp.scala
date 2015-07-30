@@ -6,13 +6,15 @@ import scala.collection.immutable.TreeMap
 import scala.collection.mutable.HashMap
 import scala.collection.Map
 
-import sml.io.{baseName,ls}
+import sml.io.{baseName,ls,join}
 
 /**
 A library to load core nlp xml into objects
 */
 object nlp
 {
+	val suffix = ".sgm.xml"
+
 	class Document(val id: String, val sentences: Seq[Sentence], val corefGroups: Seq[CorefGroup])
 	{
 		/*Returns the sentence specified by sentence id*/
@@ -56,18 +58,21 @@ object nlp
 		/**
 		Returns all the tokens with the given dependency type
 		*/
-		def tokensWithType(depType: String): Seq[Token] =
+		def tokensWithType(depType: String): Iterable[Token] =
 		{
 			//get edges with the correct type, then get the end vertex of the edge, then look up the Token
-			edgeTypes.filter((kv) => (kv._2 == depType)).map((kv) => (kv._1._2)).map(tokMap).toSeq
+			edgeTypes.filter((kv) => (kv._2 == depType)).map((kv) => (kv._1._2)).map(tokMap)
 		}
 
+		/**
+		Returns the dependency type for the token
+		*/
 		def depType(token:Token): String =
 		{
 			edgeTypes.filter(e => (e._1._2 == token.id)).head._2
 		}
 
-		def hasDepType(token: Token, depType: String): Boolean = tokensWithType(depType).contains(token)
+		def hasDepType(token: Token, dep: String): Boolean = depType(token) == dep
 
 		def isSubject( token: Token ): Boolean = hasDepType(token, "subj")
 
@@ -276,8 +281,13 @@ object nlp
 	/**
 	Removes the file extension suffix from a doc id
 	*/
-	def removeSuffix(docId:String):String = docId.substring(0, docId.indexOf(".sgm.xml"))
-	
+	def removeSuffix(docId:String):String = docId.substring(0, docId.indexOf(suffix))
+
+	/**
+	Returns the path to the file corresponding to the doc id
+	*/
+	def docIdToPath(path:String, docId:String):String = join(path,docId+suffix)
+
 	/**
 	Main Function to run a simple test
 	*/
