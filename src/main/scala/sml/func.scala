@@ -17,6 +17,22 @@ object func
 	}
 
 	/**
+	Returns all permutation pairs
+	*/
+	def permutations2[A](items:Iterable[A]): Iterator[(A,A)] =
+	{
+		val results = for(s <- items.toSet.subsets(2)) yield
+		{
+			val first = s.head
+			val second = s.tail.head
+
+			List((first,second), (second,first))
+		}
+
+		return results.flatten
+	}
+
+	/**
 	Returns all pairs (combinations) of the two iterables
 	*/
 	def combine2[A,B](seq1:Iterable[A], seq2:Iterable[B]):Iterable[(A,B)] =
