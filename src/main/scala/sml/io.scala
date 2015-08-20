@@ -57,6 +57,19 @@ object io
 	def ls(path:Path): Iterable[String] = ls(path.toString)
 
 	/**
+	Removes the file extension suffix from a doc id
+	*/
+	def removeSuffix(docId:String, suffixes:Set[String]):String = 
+	{
+		docId.split("\\.").filter(s => s.size > 0).takeWhile(s => !suffixes(s)).mkString(".")
+	}
+
+	/**
+	Removes some known suffixes
+	*/
+	def removeSuffix(docId:String):String = removeSuffix(docId, badSuffix)
+
+	/**
 	Zips the files after aligning them with a function
 	*/
 	def zipByFunction(base:String => String, superset:Iterable[String], subset:Iterable[String]):Iterable[(String,String)] =
@@ -73,8 +86,10 @@ object io
 	*/
 	def zipByPrefix(badSuffixes:Set[String], superset:Iterable[String], subset:Iterable[String]):Iterable[(String,String)] =
 	{
-		zipByFunction(s => baseName(s).split("\\.").filter(s => s.size > 0).takeWhile(s => !badSuffixes(s)).mkString("."), superset, subset)
+		zipByFunction(s => removeSuffix(baseName(s)), superset, subset)
 	}
+
+	val badSuffix = Set("xml", "txt", "sgm", "cmp", "rich_ere")
 
 	/*No idea why this won't work
 	def join(paths: String*): String =

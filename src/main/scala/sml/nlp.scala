@@ -6,15 +6,13 @@ import scala.collection.immutable.TreeMap
 import scala.collection.mutable.HashMap
 import scala.collection.Map
 
-import sml.io.{baseName,ls,join}
+import sml.io.{baseName,ls,join,removeSuffix}
 
 /**
 A library to load core nlp xml into objects
 */
 object nlp
 {
-	val suffix = ".sgm.xml"
-
 	class Document(val id: String, val sentences: Seq[Sentence], val corefGroups: Seq[CorefGroup])
 	{
 		/*Returns the sentence specified by sentence id*/
@@ -322,24 +320,6 @@ object nlp
 	Parses a token out of the xml, the field should only be present once
 	*/
 	def parseField(node: Node, field: String): String = (node \ field).text
-
-	/**
-	Removes the file extension suffix from a doc id
-	*/
-	def removeSuffix(docId:String):String = 
-	{
-		val index = docId.indexOf(suffix)
-
-		if(index != -1 )
-			return docId.substring(0, index)
-		else
-			return docId
-	}
-
-	/**
-	Returns the path to the file corresponding to the doc id
-	*/
-	def docIdToPath(path:String, docId:String):String = join(path,docId+suffix)
 
 	/**
 	Main Function to run a simple test
