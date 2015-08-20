@@ -1,7 +1,7 @@
 package sml
 
-import scala.xml.{Node}
-import scala.xml.XML.{loadFile}
+import scala.xml.Node
+import scala.xml.XML.loadFile
 import scala.collection.immutable.TreeMap
 import scala.collection.mutable.HashMap
 import scala.collection.Map
@@ -18,7 +18,12 @@ object nlp
 	class Document(val id: String, val sentences: Seq[Sentence], val corefGroups: Seq[CorefGroup])
 	{
 		/*Returns the sentence specified by sentence id*/
-		def sentenceById(sentenceId: Int) : Sentence = sentences(sentenceId -1)
+		def sentenceById(sentenceId: Int): Sentence = sentences(sentenceId -1)
+
+		/**
+		Returns the sentence the token is in
+		*/
+		def sentenceByToken(token:Token): Sentence = sentenceById(token.sentenceId)
 
 		/**
 		Returns the tokens associated with the mention
@@ -39,6 +44,31 @@ object nlp
 		{
 			sentenceById(sentenceId).tokensById(span)
 		}
+
+		/**
+		Returns all the tokens
+		*/
+		def tokens:Iterable[Token] = sentences.map(_.tokens).flatten
+
+		/**
+		Returns the token that starts at the give offset
+		*/
+		def tokenAtOffset(offset:Int):Option[Token] = 
+		{
+			//TODO make more efficient
+			sentences.map(_.tokenAtOffset(offset)).find(t => !t.isEmpty).getOrElse(None)
+		}
+
+		/**
+		Returns the token that covers the offset
+		*/
+		def tokenThatCovers(offset:Int):Option[Token] =
+		{
+			//TODO make more efficient
+			sentences.map(_.tokenCovers(offset)).find(t => !t.isEmpty).getOrElse(None)
+		}
+
+		override def toString:String = id
 	}
 
 	/**
@@ -71,6 +101,16 @@ object nlp
 		{
 			edgeTypes.filter(e => (e._1._2 == token.id)).head._2
 		}
+
+		/**
+		Finds the token that exactly starts with the given offset
+		*/
+		def tokenAtOffset(offset:Int): Option[Token] = tokens.find(t => t.start == offset)
+	
+		/**
+		Finds the token that covers the offset
+		*/
+		def tokenCovers(offset:Int): Option[Token] = tokens.find(_.containsOffset(offset))
 
 		def hasDepType(token: Token, dep: String): Boolean = depType(token) == dep
 
@@ -106,6 +146,11 @@ object nlp
 		def isAdv = pos.contains("RB")
 
 		def isPronoun = pos.contains("PR")
+
+		/**
+		Returns true if the token contains the offset
+		*/
+		def containsOffset(offset:Int):Boolean = offset >= start && offset <= end
 
 		/**
 		Compares Tokens based on their id and sentence id
@@ -281,7 +326,15 @@ object nlp
 	/**
 	Removes the file extension suffix from a doc id
 	*/
-	def removeSuffix(docId:String):String = docId.substring(0, docId.indexOf(suffix))
+	def removeSuffix(docId:String):String = 
+	{
+		val index = docId.indexOf(suffix)
+
+		if(index != -1 )
+			return docId.substring(0, index)
+		else
+			return docId
+	}
 
 	/**
 	Returns the path to the file corresponding to the doc id
