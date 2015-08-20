@@ -6,6 +6,21 @@ Contains tools for functional programming
 object func
 {
 	/**
+	Performs a Binary search on an array
+	*/
+	def binSearch[T](seq:Seq[T], item:T): Option[T] =
+	{
+		val index = java.util.Arrays.binarySearch(seq.asInstanceOf[Array[AnyRef]], item)
+
+		//if the object was found return it
+		if(index >= 0)
+			return Some(seq(index))
+		//else return None
+		else
+			return None
+	}
+
+	/**
 	Returns all combination pairs
 	*/
 	def combinations2[A](items:Iterable[A]): Iterable[(A,A)] =
