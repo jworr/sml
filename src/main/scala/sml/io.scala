@@ -56,6 +56,26 @@ object io
 	
 	def ls(path:Path): Iterable[String] = ls(path.toString)
 
+	/**
+	Zips the files after aligning them with a function
+	*/
+	def zipByFunction(base:String => String, superset:Iterable[String], subset:Iterable[String]):Iterable[(String,String)] =
+	{
+		//make a map out of the larger group
+		val mapping = superset.map(s => (base(s),s)).toMap
+	
+		//do a hash join
+		subset.map(s => (mapping(base(s)),s))
+	}
+
+	/**
+	Use a prefix function to zip the two iterable of paths
+	*/
+	def zipByPrefix(badSuffixes:Set[String], superset:Iterable[String], subset:Iterable[String]):Iterable[(String,String)] =
+	{
+		zipByFunction(s => baseName(s).split("\\.").filter(s => s.size > 0).takeWhile(s => !badSuffixes(s)).mkString("."), superset, subset)
+	}
+
 	/*No idea why this won't work
 	def join(paths: String*): String =
 	{
