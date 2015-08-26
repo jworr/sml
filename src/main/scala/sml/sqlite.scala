@@ -1,6 +1,6 @@
 package sml
 
-import java.sql.{DriverManager, Connection, Time, Timestamp, Date}
+import java.sql.{DriverManager, Connection, Time, Timestamp, Date, ResultSet, PreparedStatement}
 
 object sqlite
 {
@@ -22,6 +22,33 @@ object sqlite
 	def prepareAndExecute(db:Connection, sql:String, values:Any*)
 	{
 		val statement = db.prepareStatement(sql)
+
+		//set all the parameters
+		setParams(statement, values)
+
+		//execute the statement
+		statement.executeUpdate()
+	}
+
+	/**
+	Prepares and executes a query
+	*/
+	def prepareAndQuery(db:Connection, sql:String, values:Any*): ResultSet =
+	{
+		val query = db.prepareStatement(sql)
+
+		//set all the parameters
+		setParams(query, values)
+
+		//get and return the results
+		return query.executeQuery()
+	}
+
+	/**
+	Sets the statement parameters
+	*/
+	def setParams(statement:PreparedStatement, values:Iterable[Any])
+	{
 		var i = 1
 		
 		//for each value bind it
@@ -41,7 +68,5 @@ object sqlite
 
 			i += 1
 		}
-
-		statement.executeUpdate()
 	}
 }
