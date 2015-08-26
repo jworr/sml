@@ -69,4 +69,16 @@ object sqlite
 			i += 1
 		}
 	}
+
+	/**
+	Converts a result set into an iterable
+	*/
+	implicit def iterableResults(result:ResultSet):Iterable[ResultSet] = new Iterable[ResultSet]
+	{
+		override def iterator = new Iterator[ResultSet]
+		{
+			override def hasNext = result.next
+			override def next = result
+		}
+	}
 }
