@@ -36,6 +36,14 @@ object nlp
 		}
 
 		/**
+		Returns the token identified by the sentence and token ids
+		*/
+		def tokenById(sentenceId:Int, tokenId:Int): Token =
+		{
+			sentenceById(sentenceId).tokenById(tokenId)
+		}
+
+		/**
 		Returns tokens from the document
 		*/
 		def tokens(sentenceId:Int, span:Range): Iterable[Token] =
@@ -109,6 +117,16 @@ object nlp
 		Finds the token that covers the offset
 		*/
 		def tokenCovers(offset:Int): Option[Token] = tokens.find(_.containsOffset(offset))
+
+		/**
+		Returns the maximum token id in the sentence
+		*/
+		def maxTokenId: Int = size
+
+		/**
+		Returns the minimum token id
+		*/
+		def minTokenId: Int = 1
 
 		def hasDepType(token: Token, dep: String): Boolean = depType(token) == dep
 
@@ -319,7 +337,7 @@ object nlp
 	/**
 	Parses a token out of the xml, the field should only be present once
 	*/
-	def parseField(node: Node, field: String): String = (node \ field).text
+	def parseField(node: Node, field: String): String = (node \ field).text	
 
 	/**
 	Main Function to run a simple test
