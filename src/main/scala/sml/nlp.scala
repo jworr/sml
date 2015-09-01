@@ -75,6 +75,14 @@ object nlp
 		}
 
 		override def toString:String = id
+
+		override def equals(other:Any) = other match
+		{
+			case that:Document => that.id == id
+			case _ => false
+		}
+
+		override def hashCode = id.hashCode
 	}
 
 	/**
@@ -255,7 +263,7 @@ object nlp
 	/**
 	Loads all the annotated documents from a directory
 	*/
-	def loadDocs(dirName:String): Iterable[Document] = ls(dirName).map(parseDoc)
+	def loadDocs(dirName:String): Iterable[Document] = ls(dirName).filter(m => !m.endsWith(".swp.xml")).map(parseDoc)
 	
 	/**
 	Returns a document parsed from an xml file
