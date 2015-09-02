@@ -113,7 +113,18 @@ object nlp
 		*/
 		def depType(token:Token): String =
 		{
-			edgeTypes.filter(e => (e._1._2 == token.id)).head._2
+			//search for a dependency relationship
+			val edge = edgeTypes.find(e => (e._1._2 == token.id))
+
+			//if an edge is found
+			if(!edge.isEmpty)
+			{
+				return edge.get._2
+			}
+			else
+			{
+				return null
+			}
 		}
 
 		/**
@@ -264,7 +275,15 @@ object nlp
 	Loads all the annotated documents from a directory
 	*/
 	def loadDocs(dirName:String): Iterable[Document] = ls(dirName).filter(m => !m.endsWith(".swp.xml")).map(parseDoc)
-	
+
+	/**
+	Loads all the annotated documents given with the given prefix and suffix
+	*/
+	def loadDocs(prefix:String, suffix:String, docNames:Iterable[String]): Iterable[Document] = 
+	{
+		docNames.map(n => parseDoc(join(prefix, n+suffix)))
+	}
+
 	/**
 	Returns a document parsed from an xml file
 	*/
