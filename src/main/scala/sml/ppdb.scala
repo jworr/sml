@@ -172,7 +172,7 @@ object ppdb
 
 	def distTraverse(limit:Int, db:Connection)(start:String):Iterable[String] = DistTraverser(start,limit,db).toSeq
 
-	def simTraverse(limit:Int, db:Connection)(start:String):Iterable[String] = SimTraverser(start,limit,db).toSeq
+	def simTraverse(limit:Double, db:Connection)(start:String):Iterable[String] = SimTraverser(start,limit,db).toSeq
 
 	def main(args:Array[String])
 	{
