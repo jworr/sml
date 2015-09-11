@@ -18,6 +18,7 @@ object perceptron
 	{
 		//define the weights with a bias term at the end
 		val weights = new Array[Double](dimension+1)
+		val bias = weights.size -1
 
 		/**
 		Train the model
@@ -26,7 +27,6 @@ object perceptron
 		{
 			var delta = new Array[Double](dimension+1)
 			var i = 0
-			val bias = delta.size -1
 			var converged = false
 			
 			//while the model has not converged, continue training
@@ -87,7 +87,48 @@ object perceptron
 			dotProduct(instance, weights) > 0.0
 		}
 	}
-	
+
+	/**
+	Online trained binary perceptron
+	*/
+	class OnlineBinaryPerceptron(val dimension:Int, val learningRate:Double=.1)
+	extends OnlineClassifier[Boolean](Set(true,false))
+	{
+		//define the weights with a bias term at the end
+		val weights = new Array[Double](dimension+1)
+		val bias = weights.size -1
+
+		/**
+		Update the model
+		*/
+		def onlineTrain(example:LabeledInstance[Boolean])
+		{
+			//if the predicted label doesn't match the output update the weights
+			if(classify(example) != example.label)
+			{
+				val direction = if(example.label) 1.0 else -1.0
+				
+				//add to the delta
+				for( (feat,j) <- example.featuresWithIndex)
+				{
+					weights(j) += feat * direction * learningRate
+				}
+
+				//update the bias
+				weights(bias) += direction * learningRate
+			}
+		}
+
+		/**
+		Classify an instance	
+		*/
+		def classify(instance:Instance):Boolean =
+		{
+			//if the product is positive then the prediction is true
+			dotProduct(instance, weights) > 0.0
+		}
+	}
+
 	/**
 	Computes the dot product between the instance features and
 	the weights
@@ -118,10 +159,26 @@ object perceptron
 		val model = new BinaryPerceptron(2)
 
 		model.batchTrain(data)
-
+		
+		println("batch")
+		println(model.weights.mkString(","))
 		for(point <- data)
 		{
 			println("choice " + model.classify(point) + " answer " + point.label)
+		}
+
+		val online = new OnlineBinaryPerceptron(2, .5)
+
+		println("online")
+		for(point <- Random.shuffle(data))
+		{
+			online.onlineTrain(point)	
+		}
+
+		println(online.weights.mkString(","))
+		for(point <- data)
+		{
+			println("choice " + online.classify(point) + " answer " + point.label)
 		}
 	}
 }
