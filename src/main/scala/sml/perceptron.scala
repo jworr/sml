@@ -86,6 +86,8 @@ object perceptron
 			//if the product is positive then the prediction is true
 			dotProduct(instance, weights) > 0.0
 		}
+
+		override def toString:String = "Batch Perceptron " + weights.mkString(",")
 	}
 
 	/**
@@ -127,6 +129,8 @@ object perceptron
 			//if the product is positive then the prediction is true
 			dotProduct(instance, weights) > 0.0
 		}
+
+		override def toString:String = "Batch Perceptron " + weights.mkString(",")
 	}
 
 	/**
