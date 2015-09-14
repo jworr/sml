@@ -87,7 +87,7 @@ object perceptron
 			dotProduct(instance, weights) > 0.0
 		}
 
-		override def toString:String = "Batch Perceptron " + weights.mkString(",")
+		override def toString:String = "Online Perceptron " + weights.mkString(",")
 	}
 
 	/**
