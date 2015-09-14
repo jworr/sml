@@ -93,7 +93,7 @@ object ppdb
 	/**
 	Defines a traverser over PPDB
 	*/
-	abstract class Traverser(val db:Connection, val start:String) extends Iterable[String]
+	abstract class Traverser(val db:Connection, val start:String) extends Iterable[PPDBNode]
 	{
 		/**
 		Wraps a paraphrase in a node
@@ -108,14 +108,14 @@ object ppdb
 		/**
 		Returns an iterator over phrase
 		*/
-		def iterator = new Iterator[String]
+		def iterator = new Iterator[PPDBNode]
 		{
 			val visited = new HashSet[PPDBNode]()
 			val fringe = new Queue[PPDBNode]() ++ List[PPDBNode](start)
 
 			override def hasNext:Boolean = !fringe.isEmpty
 		
-			override def next:String = 
+			override def next:PPDBNode = 
 			{
 				//get the current
 				val current = fringe.dequeue
@@ -127,7 +127,7 @@ object ppdb
 				fringe ++= (successors(current).filter(n => !visited(n)))
 			
 				//return the current value
-				return current.phrase
+				return current
 			}
 		}
 	}
@@ -170,9 +170,9 @@ object ppdb
 		}
 	}
 
-	def distTraverse(limit:Int, db:Connection)(start:String):Iterable[String] = DistTraverser(start,limit,db).toSeq
+	def distTraverse(limit:Int, db:Connection)(start:String):Iterable[PPDBNode] = DistTraverser(start,limit,db).toSeq
 
-	def simTraverse(limit:Double, db:Connection)(start:String):Iterable[String] = SimTraverser(start,limit,db).toSeq
+	def simTraverse(limit:Double, db:Connection)(start:String):Iterable[PPDBNode] = SimTraverser(start,limit,db).toSeq
 
 	def main(args:Array[String])
 	{
