@@ -279,10 +279,12 @@ object nlp
 	/**
 	Loads all the annotated documents given with the given prefix and suffix
 	*/
-	def loadDocs(prefix:String, suffix:String, docNames:Iterable[String]): Iterable[Document] = 
+	def loadDocs(dir:String, prefix:String, suffix:String, docNames:Iterable[String]): Iterable[Document] = 
 	{
-		docNames.map(n => parseDoc(join(prefix, n+suffix)))
+		docNames.map(n => parseDoc(join(dir, prefix+n+suffix)))
 	}
+
+	def loadDocs(dir:String, suffix:String, docNames:Iterable[String]): Iterable[Document] = loadDocs(dir, "", suffix, docNames)
 
 	/**
 	Returns a document parsed from an xml file
