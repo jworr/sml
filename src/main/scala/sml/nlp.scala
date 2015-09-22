@@ -5,6 +5,7 @@ import scala.xml.XML.loadFile
 import scala.collection.immutable.TreeMap
 import scala.collection.mutable.HashMap
 import scala.collection.Map
+import scala.math.{min,max}
 
 import sml.io.{baseName,ls,join,removeSuffix}
 
@@ -26,7 +27,7 @@ object nlp
 		/**
 		Returns the tokens associated with the mention
 		*/
-		def mentionTokens(mention:Mention): Iterable[Token] =
+		def mentionTokens(mention:Mention): Seq[Token] =
 		{
 			//get the sentence
 			val sentence = sentenceById(mention.sentenceId)
@@ -46,7 +47,7 @@ object nlp
 		/**
 		Returns tokens from the document
 		*/
-		def tokens(sentenceId:Int, span:Range): Iterable[Token] =
+		def tokens(sentenceId:Int, span:Range): Seq[Token] =
 		{
 			sentenceById(sentenceId).tokensById(span)
 		}
@@ -55,6 +56,19 @@ object nlp
 		Returns all the tokens
 		*/
 		def tokens:Iterable[Token] = sentences.map(_.tokens).flatten
+
+		/**
+		Returns the window, including the given sequence, on either side of the
+		sequence
+		*/
+		def window(subseq:Seq[Token], window:Int):Seq[Token] =
+		{
+			val sent = sentenceById(subseq.head.sentenceId)
+			val start = max(0, subseq.head.id - window)
+			val end = min(subseq.last.id + window, sent.tokens.last.id)
+
+			tokens(sent.id, Range(start,end+1))
+		}
 
 		/**
 		Returns the token that starts at the give offset
@@ -93,11 +107,11 @@ object nlp
 		val tokMap: TreeMap[Int,Token] = TreeMap(allTokens.map( (t:Token) => (t.id,t) ):_*)
 		val edgeTypes = edges
 
-		def tokens: Iterable[Token] = tokMap.values
+		def tokens: Seq[Token] = tokMap.values.toSeq
 
 		def tokenById(tokenId: Int): Token = tokMap(tokenId)
 
-		def tokensById(span:Range): Iterable[Token] = tokens.filter(t => span.contains(t.id))
+		def tokensById(span:Range): Seq[Token] = tokens.slice(span.head, span.end+1)
 
 		/**
 		Returns all the tokens with the given dependency type
