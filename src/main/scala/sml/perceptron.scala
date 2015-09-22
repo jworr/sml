@@ -11,9 +11,12 @@ A package of perceptron based classifiers
 object perceptron
 {
 	/**
-	A perceptron model for binary classifications
+	A perceptron model for binary classifications with L2 regularization
 	*/
-	class BinaryPerceptron(val dimension:Int, val learningRate:Double=.1, val threshold:Double=1e7, val maxIterations:Int=1000)
+	class BinaryPerceptron(val dimension:Int, val learningRate:Double=.1, 
+		val regValue:Double = 0.0, 
+		val threshold:Double=1e7, 
+		val maxIterations:Int=1000)
 	extends BatchClassifier[Boolean](Set(true,false))
 	{
 		//define the weights with a bias term at the end
@@ -51,11 +54,11 @@ object perceptron
 						//add to the delta
 						for( (feat,j) <- example.featuresWithIndex)
 						{
-							delta(j) -= feat * direction
+							delta(j) += feat * direction
 						}
 
 						//update the bias
-						delta(bias) -= direction
+						delta(bias) += direction
 						updates += 1
 					}
 				}
@@ -66,7 +69,7 @@ object perceptron
 					//update each weight
 					for( (delt, j) <- delta.zipWithIndex)
 					{
-						weights(j) -= learningRate * delta(j)/updates
+						weights(j) += learningRate * delta(j)/updates - (learningRate * weights(j) * regValue)
 					}
 				}
 
@@ -91,9 +94,11 @@ object perceptron
 	}
 
 	/**
-	Online trained binary perceptron
+	Online trained binary perceptron with L2 regularization
 	*/
-	class OnlineBinaryPerceptron(val dimension:Int, val learningRate:Double=.1)
+	class OnlineBinaryPerceptron(val dimension:Int, 
+		val learningRate:Double=.1,
+		val regValue:Double=0.0)
 	extends OnlineClassifier[Boolean](Set(true,false))
 	{
 		//define the weights with a bias term at the end
@@ -113,11 +118,11 @@ object perceptron
 				//add to the delta
 				for( (feat,j) <- example.featuresWithIndex)
 				{
-					weights(j) += feat * direction * learningRate
+					weights(j) += feat * direction * learningRate - (learningRate * weights(j) * regValue)
 				}
 
 				//update the bias
-				weights(bias) += direction * learningRate
+				weights(bias) += direction * learningRate - (learningRate * weights(bias) * regValue)
 			}
 		}
 
