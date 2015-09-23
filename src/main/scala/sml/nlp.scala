@@ -295,7 +295,7 @@ object nlp
 	*/
 	def loadDocs(dir:String, prefix:String, suffix:String, docNames:Iterable[String]): Iterable[Document] = 
 	{
-		docNames.map(n => parseDoc(join(dir, prefix+n+suffix)))
+		docNames.map(n => parseDoc(join(dir, prefix+n+suffix), prefix))
 	}
 
 	def loadDocs(dir:String, suffix:String, docNames:Iterable[String]): Iterable[Document] = loadDocs(dir, "", suffix, docNames)
@@ -303,7 +303,7 @@ object nlp
 	/**
 	Returns a document parsed from an xml file
 	*/
-	def parseDoc(fileName: String): Document =
+	def parseDoc(fileName: String, prefix:String): Document =
 	{
 		//load the doc as xml
 		val xmlDoc = loadFile(fileName)
@@ -314,7 +314,17 @@ object nlp
 		//parse out all the coref groups
 		val coref = (xmlDoc \ "root" \ "document" \ "coreference" \ "coreference").map(parseCoref)
 
-		new Document(removeSuffix(baseName(fileName)), sentences, coref)
+		new Document(parseDocId(fileName,prefix), sentences, coref)
+	}
+
+	def parseDoc(fileName:String): Document = parseDoc(fileName, "")
+
+	/**
+	Strips off any prefix or suffix around the file id
+	*/
+	def parseDocId(fileName:String, prefix:String):String =
+	{
+		removeSuffix(baseName(fileName)).replaceFirst(prefix,"")
 	}
 
 	/**
