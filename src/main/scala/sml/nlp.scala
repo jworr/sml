@@ -100,6 +100,18 @@ object nlp
 	}
 
 	/**
+	An index for a document by Token (word)
+	*/
+	class DocumentIndex(val document:Document)
+	{
+		val index = document.tokens.groupBy(_.word.toLowerCase).toMap
+		/**
+		Return all the tokens that match the given word
+		*/
+		def lookup(word:String):Iterable[Token] = index.getOrElse(word, Seq())
+	}
+
+	/**
 	Represents a Sentence in a Document
 	*/
 	class Sentence(val id: Int, allTokens: Seq[Token], edges: Map[(Int,Int), String])
