@@ -1,5 +1,6 @@
 package sml
 
+import java.lang.System.currentTimeMillis
 import scala.util.Random
 import scala.math.{pow, sqrt}
 
@@ -15,13 +16,14 @@ object perceptron
 	*/
 	class BinaryPerceptron(val dimension:Int, val learningRate:Double=.1, 
 		val regValue:Double = 0.0, 
-		val threshold:Double=1e7, 
+		val threshold:Double=1e-7, 
 		val maxIterations:Int=1000)
 	extends BatchClassifier[Boolean](Set(true,false))
 	{
 		//define the weights with a bias term at the end
 		val weights = new Array[Double](dimension+1)
 		val bias = weights.size -1
+		var trainTime = 0.0
 
 		/**
 		Train the model
@@ -31,6 +33,8 @@ object perceptron
 			var delta = new Array[Double](dimension+1)
 			var i = 0
 			var converged = false
+
+			val start = currentTimeMillis
 			
 			//while the model has not converged, continue training
 			while(i < maxIterations && !converged)
@@ -52,13 +56,13 @@ object perceptron
 						val direction = if(example.label) 1.0 else -1.0
 
 						//add to the delta
-						for( (feat,j) <- example.featuresWithIndex)
+						for((feat,j) <- example.featuresWithIndex)
 						{
 							delta(j) += feat * direction
 						}
 
 						//update the bias
-						delta(bias) += direction
+						delta(bias) += direction 
 						updates += 1
 					}
 				}
@@ -72,11 +76,13 @@ object perceptron
 						weights(j) += learningRate * delta(j)/updates - (learningRate * weights(j) * regValue)
 					}
 				}
-
+			
 				//check for convergance
 				converged = magnitude(delta) < threshold
 				i += 1
 			}
+				
+			trainTime = currentTimeMillis - start
 
 			return converged
 		}
@@ -90,7 +96,7 @@ object perceptron
 			dotProduct(instance, weights) > 0.0
 		}
 
-		override def toString:String = "Batch Perceptron " + weights.mkString(",")
+		override def toString:String = "Batch Perceptron " + compactStr(weights)
 	}
 
 	/**
@@ -116,7 +122,7 @@ object perceptron
 				val direction = if(example.label) 1.0 else -1.0
 				
 				//add to the delta
-				for( (feat,j) <- example.featuresWithIndex)
+				for((feat,j) <- example.featuresWithIndex)
 				{
 					weights(j) += feat * direction * learningRate - (learningRate * weights(j) * regValue)
 				}
@@ -135,7 +141,7 @@ object perceptron
 			dotProduct(instance, weights) > 0.0
 		}
 
-		override def toString:String = "Online Perceptron " + weights.mkString(",")
+		override def toString:String = "Online Perceptron " + compactStr(weights)
 	}
 
 	/**
@@ -145,12 +151,44 @@ object perceptron
 	def dotProduct(instance:Instance, weights:Array[Double]):Double =
 	{
 		instance.features.zip(weights).map(p => p._1 * p._2).sum + weights.last
+		/*var i = 0
+		var total = 0
+		val limit = instance.features.size
+		val feats = instance.features
+
+		while(i < limit)
+		{
+			total += feats(i) * weights(i)
+		}
+
+		return total + weights.last*/
 	}
 
 	/**
 	Computes the magnitude of the vector
 	*/
 	def magnitude(vector:Array[Double]):Double = sqrt(vector.map(i => pow(i,2.0)).sum)
+
+	/**
+	Returns a compact representation of the weight vector
+	*/
+	def compactStr(weights:Array[Double]):String =
+	{
+		val limit = 10
+
+		def toStr(items:Seq[(Double,Int)]):String = items.map(p => p._2 + ":" + p._1).mkString(",")
+
+		//show top and bottom k if the length is over the limit
+		if(weights.size > limit)
+		{
+			val inOrder = weights.sorted
+			toStr(inOrder.zipWithIndex.slice(0,limit/2)) + "..." + toStr(inOrder.zipWithIndex.slice(weights.size - (limit/2), weights.size))
+		}
+		else
+		{
+			weights.mkString(", ")
+		}
+	}
 
 	/**
 	Do a couple tests
