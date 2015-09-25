@@ -1,6 +1,6 @@
 package sml
 
-import sml.learn.{Instance,LabeledInstance}
+import sml.learn._
 
 /**
 A sparse bag-of-words style collection
@@ -19,6 +19,18 @@ object lexicon
 	}
 
 	/**
+	A dense collection of strings with a binary variable interface
+	*/
+	class DenseLexicon[C](source:Seq[Iterable[String]], val domain:Dictionary, labels:Seq[C]) 
+		extends Iterable[LabeledInstance[C]]
+	{
+		val data = source.zip(labels).map(p => domain.makeLabeledDense(p._1, p._2))
+
+		def iterator:Iterator[LabeledInstance[C]] = data.iterator
+	}
+
+
+	/**
 	A mapping between Strings and indexes
 	*/
 	class Dictionary(val domain:Set[String])
@@ -34,16 +46,42 @@ object lexicon
 		}
 
 		/**
+		Makes an array out of the collection
+		*/
+		def makeArray(data:Iterable[String]):Array[Double] =
+		{
+			val indexes = makeSparse(data)
+
+			Range(0,domain.size).map(i => if(indexes.contains(i)) 1.0 else 0.0).toArray
+		}
+
+		/**
 		Creates an instance based on the dictionary's domain
 		*/
-		def makeInstance(data:Iterable[String]):SparseInstance = new SparseInstance(makeSparse(data), size)
+		def makeInstance(data:Iterable[String]):Instance = new SparseInstance(makeSparse(data), size)
 
 		/**
 		Creates a labeled instance based on the dictionary's domain
 		*/
-		def makeLabeledInstance[C](data:Iterable[String], label:C):LabeledSparseInstance[C] =
+		def makeLabeledInstance[C](data:Iterable[String], label:C):LabeledInstance[C] =
 		{
 			new LabeledSparseInstance(makeSparse(data), size, label)
+		}
+
+		/**
+		Creates a dense instance
+		*/
+		def makeLabeledDense[C](data:Iterable[String], label:C):LabeledInstance[C] =
+		{
+			new LabeledVectorInstance(makeArray(data), label)
+		}
+
+		/**
+		Creates a dense labelled instance
+		*/
+		def makeDense[C](data:Iterable[String]):Instance =
+		{
+			new VectorInstance(makeArray(data))
 		}
 
 		def size:Int = domain.size
@@ -68,6 +106,23 @@ object lexicon
 		Returns all the features
 		*/
 		def features:Iterable[Double] = Range(0,domainSize).map(i => featureAt(i))
+	
+		/*
+		new Iterable[Double]
+		{
+			def iterator = new Iterator[Double]
+			{
+				var index = 0
+				
+				def hasNext:Boolean = index < domainSize
+				def next:Double =
+				{
+					val result = featureAt(index)
+					index += 1
+					return result
+				}
+			}
+		}*/
 
 		def size:Int = domainSize
 	}
