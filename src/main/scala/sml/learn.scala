@@ -72,15 +72,17 @@ object learn
 	/**
 	Defines the behavior of a classifier
 	*/
-	abstract class Classifier[C](val classDomain:Set[C])
+	trait Classifier[C]
 	{
 		def classify(example:Instance):C
+
+		def domain:Set[C]
 	}
 
 	/**
 	A classifier that is batch trained
 	*/
-	abstract class BatchClassifier[C](domain:Set[C]) extends Classifier[C](domain)
+	trait BatchClassifier[C] extends Classifier[C]
 	{
 		def batchTrain(examples:Iterable[LabeledInstance[C]]):Boolean
 	}
@@ -88,7 +90,7 @@ object learn
 	/**
 	A classifier that is online trained
 	*/
-	abstract class OnlineClassifier[C](domain:Set[C]) extends Classifier[C](domain)
+	trait OnlineClassifier[C] extends Classifier[C]
 	{
 		def onlineTrain(example:LabeledInstance[C])
 	}

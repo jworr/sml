@@ -18,7 +18,7 @@ object perceptron
 		val regValue:Double = 0.0, 
 		val threshold:Double=1e-7, 
 		val maxIterations:Int=1000)
-	extends BatchClassifier[Boolean](Set(true,false))
+	extends BatchClassifier[Boolean]
 	{
 		//define the weights with a bias term at the end
 		val weights = new Array[Double](dimension+1)
@@ -96,6 +96,8 @@ object perceptron
 			dotProduct(instance, weights) > 0.0
 		}
 
+		def domain:Set[Boolean] = Set(true,false)
+
 		override def toString:String = "Batch Perceptron " + compactStr(weights)
 	}
 
@@ -105,7 +107,7 @@ object perceptron
 	class OnlineBinaryPerceptron(val dimension:Int, 
 		val learningRate:Double=.1,
 		val regValue:Double=0.0)
-	extends OnlineClassifier[Boolean](Set(true,false))
+	extends OnlineClassifier[Boolean]
 	{
 		//define the weights with a bias term at the end
 		val weights = new Array[Double](dimension+1)
@@ -140,6 +142,8 @@ object perceptron
 			//if the product is positive then the prediction is true
 			dotProduct(instance, weights) > 0.0
 		}
+
+		def domain:Set[Boolean] = Set(true,false)
 
 		override def toString:String = "Online Perceptron " + compactStr(weights)
 	}
