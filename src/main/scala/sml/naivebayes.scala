@@ -13,7 +13,7 @@ object naivebayes
 	/**
 	A Naive Bayes Classifier with a Multinomial event model
 	*/
-	class MultNaiveBayes[C](val classDomain:Set[C], val dimension:Int) extends BatchClassifier[C]
+	class MultNaiveBayes[C](val classDomain:Set[C], val dimension:Int) extends BatchClassifier[C] with OnlineClassifier[C]
 	{
 		val index = domain.zipWithIndex.toMap
 		val classCounts = Array.fill(domain.size)(0.0)
