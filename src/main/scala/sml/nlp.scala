@@ -55,7 +55,7 @@ object nlp
 		/**
 		Returns all the tokens
 		*/
-		def tokens:Iterable[Token] = sentences.map(_.tokens).flatten
+		def tokens:Seq[Token] = sentences.map(_.tokens).flatten
 
 		/**
 		Returns the window, including the given sequence, on either side of the
@@ -75,17 +75,7 @@ object nlp
 		*/
 		def tokenAtOffset(offset:Int):Option[Token] = 
 		{
-			//TODO make more efficient
-			sentences.map(_.tokenAtOffset(offset)).find(t => !t.isEmpty).getOrElse(None)
-		}
-
-		/**
-		Returns the token that covers the offset
-		*/
-		def tokenThatCovers(offset:Int):Option[Token] =
-		{
-			//TODO make more efficient
-			sentences.map(_.tokenCovers(offset)).find(t => !t.isEmpty).getOrElse(None)
+			tokens.find(t => t.containsOffset(offset))
 		}
 
 		override def toString:String = id
@@ -123,7 +113,7 @@ object nlp
 
 		def tokenById(tokenId: Int): Token = tokMap(tokenId)
 
-		def tokensById(span:Range): Seq[Token] = tokens.slice(span.head, span.end+1)
+		def tokensById(span:Range): Seq[Token] = tokens.slice(span.head-1, span.end)
 
 		/**
 		Returns all the tokens with the given dependency type
@@ -152,16 +142,6 @@ object nlp
 				return null
 			}
 		}
-
-		/**
-		Finds the token that exactly starts with the given offset
-		*/
-		def tokenAtOffset(offset:Int): Option[Token] = tokens.find(t => t.start == offset)
-	
-		/**
-		Finds the token that covers the offset
-		*/
-		def tokenCovers(offset:Int): Option[Token] = tokens.find(_.containsOffset(offset))
 
 		/**
 		Returns the maximum token id in the sentence
