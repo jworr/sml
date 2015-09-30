@@ -176,17 +176,17 @@ object nlp
 	class Token(val id: Int, val sentenceId: Int, val word: String, val lemma: String, val start: Int, val end: Int, val pos: String, val ner:String) 
 	extends Ordered[Token]
 	{
-		def isVerb = pos.contains("V")
+		def isVerb = pos.startsWith("VB")
 
-		def isNoun = pos.contains("N")
+		def isNoun = pos.startsWith("NN")
 
-		def isProperNoun = pos.contains("NNP")
+		def isProperNoun = pos.startsWith("NNP")
 
-		def isAdj = pos.contains("J")
+		def isAdj = pos.startsWith("JJ")
 
-		def isAdv = pos.contains("RB")
+		def isAdv = pos.startsWith("RB")
 
-		def isPronoun = pos.contains("PR")
+		def isPronoun = pos.startsWith("PR")
 
 		/**
 		Returns true if the token contains the offset
