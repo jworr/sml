@@ -113,7 +113,7 @@ object nlp
 
 		def tokenById(tokenId: Int): Token = tokMap(tokenId)
 
-		def tokensById(span:Range): Seq[Token] = tokens.slice(span.head-1, span.end)
+		def tokensById(span:Range): Seq[Token] = tokens.slice(span.head-1, span.end-1)
 
 		/**
 		Returns all the tokens with the given dependency type
