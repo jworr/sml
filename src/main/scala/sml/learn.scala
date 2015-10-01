@@ -94,4 +94,25 @@ object learn
 	{
 		def onlineTrain(example:LabeledInstance[C])
 	}
+
+	/**
+	Returns a compact representation of the weight vector
+	*/
+	def compactStr(weights:Array[Double]):String =
+	{
+		val limit = 10
+
+		def toStr(items:Seq[(Double,Int)]):String = items.map(p => p._2 + ":" + p._1).mkString(",")
+
+		//show top and bottom k if the length is over the limit
+		if(weights.size > limit)
+		{
+			val inOrder = weights.sorted
+			toStr(inOrder.zipWithIndex.slice(0,limit/2)) + "..." + toStr(inOrder.zipWithIndex.slice(weights.size - (limit/2), weights.size))
+		}
+		else
+		{
+			weights.mkString(", ")
+		}
+	}
 }

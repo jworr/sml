@@ -73,6 +73,37 @@ object naivebayes
 		}
 
 		def domain:Set[C] = classDomain
+
+		override def toString:String =
+		{
+			//for each class output the weights
+			val wStrs = for(label <- classDomain) yield
+			{
+				s"$label: " + strSummary(featCounts(index(label)))
+			}
+
+			return wStrs.mkString("\n")
+		}
+	}
+
+	/**
+	Returns a string summary of the weights
+	*/
+	def strSummary(counts:Seq[HashMap[Double,Int]]):String =
+	{
+		val feats = 
+			if(counts.size > 10) 
+				counts.sortBy(f => f.values.sum).slice(counts.size -10, counts.size) 
+			else 
+				counts
+	
+		//generate a string for the feature counts
+		val parts = for( (value,index) <- feats.zipWithIndex ) yield
+		{
+			s"$index: " + value.map(p => p._1+"->"+p._2).mkString(",")
+		}
+
+		return parts.mkString(" ")
 	}
 
 	/**
