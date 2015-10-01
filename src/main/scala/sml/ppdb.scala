@@ -40,14 +40,18 @@ object ppdb
 		else 
 			"select target, google_sim, pos from similarity where source = ?"
 
+		val source = phrase.toLowerCase
+
 		//excute the query
-		val result = prepareAndQuery(db, query, phrase.toLowerCase)
+		val result = prepareAndQuery(db, query, source)
 
 		//build and return the results
-		for(row <- result) yield
+		val sim = for(row <- result) yield
 		{
 			(row.getString(1), row.getDouble(2))
 		}
+
+		return sim ++ List( (source, 1.0) )
 	}
 
 	/**
