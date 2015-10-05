@@ -1,10 +1,8 @@
-package sml
+package sml.nlp
 
 import scala.collection.mutable.ArrayBuffer
 import java.io.FileInputStream
 import opennlp.tools.chunker.{ChunkerModel, ChunkerME}
-
-import sml.nlp.{Sentence, Token, parseDoc, POS}
 
 /**
 Loads the OpenNLP chunker

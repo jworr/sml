@@ -8,12 +8,12 @@ import scala.collection.Map
 import scala.math.{min,max}
 
 import sml.io.{baseName,ls,join,removeSuffix}
-import sml.chunker.{Chunk, chunkSentence}
+import sml.nlp.chunker.{Chunk, chunkSentence}
 
 /**
 A library to load core nlp xml into objects
 */
-object nlp
+package object nlp
 {
 	class Document(val id: String, val sentences: Seq[Sentence], val corefGroups: Seq[CorefGroup])
 	{
