@@ -1,1 +1,1 @@
-/home/walker/.m2/repository/grph/grph/1.5.29/grph-1.5.29.jar:/home/walker/.m2/repository/org/scala-lang/scala-library/2.8.0/scala-library-2.8.0.jar:target/sml-1.0-SNAPSHOT.jar
+/home/walker/.m2/repository/grph/grph/1.5.29/grph-1.5.29.jar:/home/walker/.m2/repository/org/scala-lang/scala-library/2.8.0/scala-library-2.8.0.jar:target/sml-1.0-SNAPSHOT.jar:/home/walker/.m2/repository/org/xerial/sqlite-jdbc/3.8.10.1/sqlite-jdbc-3.8.10.1.jar:/home/walker/.m2/repository/org/apache/opennlp/opennlp-tools/1.6.0/opennlp-tools-1.6.0.jar

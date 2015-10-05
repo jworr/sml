@@ -8,6 +8,7 @@ import scala.collection.Map
 import scala.math.{min,max}
 
 import sml.io.{baseName,ls,join,removeSuffix}
+import sml.chunker.{Chunk, chunkSentence}
 
 /**
 A library to load core nlp xml into objects
@@ -16,6 +17,8 @@ object nlp
 {
 	class Document(val id: String, val sentences: Seq[Sentence], val corefGroups: Seq[CorefGroup])
 	{
+		val chunks = sentences.map(chunkSentence)
+
 		/*Returns the sentence specified by sentence id*/
 		def sentenceById(sentenceId: Int): Sentence = sentences(sentenceId -1)
 
@@ -23,6 +26,11 @@ object nlp
 		Returns the sentence the token is in
 		*/
 		def sentenceByToken(token:Token): Sentence = sentenceById(token.sentenceId)
+
+		/**
+		Gets chunks by the sentence they are associated with
+		*/
+		def chunksBySentenceId(sentenceId:Int):Seq[Chunk] = chunks(sentenceId-1)
 
 		/**
 		Returns the tokens associated with the mention
@@ -383,6 +391,14 @@ object nlp
 	Parses a token out of the xml, the field should only be present once
 	*/
 	def parseField(node: Node, field: String): String = (node \ field).text	
+
+	/**
+	List all the Penn-Treebank POS tags
+	*/
+	val POS = Set("CC",	"CD",	"DT",	"EX",	"FW",	"IN", "JJ", "JJR", "JJS", 
+	"LS", "MD", "NN",	"NNS", "NNP", "NNPS", "PDT", "POS", "PRP", "PRP$", "RB", 
+	"RBR", "RBS", "RP", "SYM", "TO", "UH", "VB", "VBD", "VBG", "VBN", "VBP", 
+	"VBZ", "WDT", "WP", "WP$", "WRB")
 
 	/**
 	Main Function to run a simple test
