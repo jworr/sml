@@ -55,6 +55,33 @@ object ppdb
 	}
 
 	/**
+	Return phrases with syntatic usage which are connected to the given phrase
+	*/
+	def neighborsWithSyn(db:Connection, phrase:String): Iterable[(String, Set[String])] =
+	{
+		val query = "select target, pos from similiarity where source = ?"
+
+		//execute and return the results
+		val results = prepareAndQuery(db, query, phrase.toLowerCase).map(r => (r.getString(1), r.getString(2))).groupBy(p => p._1)
+
+		//build groups
+		for( (phrase, tuple) <- results ) yield
+		{
+			(phrase, tuple.map(_._2).toSet)
+		}
+	}
+
+	/**
+	Returns all the syntatic usages for the phrase
+	*/
+	def syntaticRules(db:Connection, phrase:String):Set[String] =
+	{
+		val query = "select pos from similarity where source = ?"
+
+		prepareAndQuery(db, query, phrase.toLowerCase).map(_.getString(1)).toSet
+	}
+
+	/**
 	Returns only those phrases which are unique neighbors of the given phrase
 	*/
 	def neighbors(db:Connection, phrase:String): Iterable[String] =
@@ -83,7 +110,7 @@ object ppdb
 	/**
 	A phrase in PPDB
 	*/
-	class PPDBNode(val phrase:String, val score:Double)
+	class PPDBNode(val phrase:String, val score:Double, val synRules:Set[String])
 	{
 		override def equals(other:Any): Boolean = other match
 		{
@@ -141,7 +168,7 @@ object ppdb
 	*/
 	case class DistTraverser(startNode:String, val limit:Int, conn:Connection) extends Traverser(conn, startNode)
 	{
-		implicit def init(phrase:String) = new PPDBNode(phrase,0.0)
+		implicit def init(phrase:String) = new PPDBNode(phrase,0.0,syntaticRules(conn, phrase))
 
 		/**
 		Returns all nodes one step away from the current node
@@ -152,7 +179,7 @@ object ppdb
 			
 			//get the neighors we are not beyond our limit
 			if(newScore <= limit)
-				neighbors(db, node.phrase).map(s => new PPDBNode(s, newScore))
+				neighborsWithSyn(db, node.phrase).map(s => new PPDBNode(s._1, newScore, s._2))
 			else
 				List[PPDBNode]()
 		}
@@ -163,14 +190,14 @@ object ppdb
 	*/
 	case class SimTraverser(startNode:String, val limit:Double, conn:Connection) extends Traverser(conn, startNode)
 	{
-		implicit def init(phrase:String) = new PPDBNode(phrase, 1.0)
+		implicit def init(phrase:String) = new PPDBNode(phrase, 1.0, syntaticRules(conn, phrase))
 
 		/**
 		Returns all nodes that are within a similarity threshold of the the start
 		*/
 		def successors(node:PPDBNode):Iterable[PPDBNode] =
 		{
-			neighbors(db, node.phrase).map(s => new PPDBNode(s, node.score * adjSim(db, s, node.phrase))).filter(_.score >= limit)
+			neighborsWithSyn(db, node.phrase).map(s => new PPDBNode(s._1, node.score * adjSim(db, s._1, node.phrase), s._2)).filter(_.score >= limit)
 		}
 	}
 
