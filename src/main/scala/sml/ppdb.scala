@@ -59,7 +59,7 @@ object ppdb
 	*/
 	def neighborsWithSyn(db:Connection, phrase:String): Iterable[(String, Set[String])] =
 	{
-		val query = "select target, pos from similiarity where source = ?"
+		val query = "select target, pos from similarity where source = ?"
 
 		//execute and return the results
 		val results = prepareAndQuery(db, query, phrase.toLowerCase).map(r => (r.getString(1), r.getString(2))).groupBy(p => p._1)

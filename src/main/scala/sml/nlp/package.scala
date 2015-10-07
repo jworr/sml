@@ -17,8 +17,6 @@ package object nlp
 {
 	class Document(val id: String, val sentences: Seq[Sentence], val corefGroups: Seq[CorefGroup])
 	{
-		val chunks = sentences.map(chunkSentence)
-
 		/*Returns the sentence specified by sentence id*/
 		def sentenceById(sentenceId: Int): Sentence = sentences(sentenceId -1)
 
@@ -31,6 +29,11 @@ package object nlp
 		Gets chunks by the sentence they are associated with
 		*/
 		def chunksBySentenceId(sentenceId:Int):Seq[Chunk] = chunks(sentenceId-1)
+
+		/**
+		Returns all the sentences chunked
+		*/
+		def chunks:Seq[Seq[Chunk]] = sentences.map(_.chunks)
 
 		/**
 		Returns the tokens associated with the mention
@@ -116,6 +119,7 @@ package object nlp
 	{
 		val tokMap: TreeMap[Int,Token] = TreeMap(allTokens.map( (t:Token) => (t.id,t) ):_*)
 		val edgeTypes = edges
+		val chunks:Seq[Chunk] = chunkSentence(this)
 
 		def tokens: Seq[Token] = tokMap.values.toSeq
 
@@ -130,6 +134,35 @@ package object nlp
 		{
 			//get edges with the correct type, then get the end vertex of the edge, then look up the Token
 			edgeTypes.filter((kv) => (kv._2 == depType)).map((kv) => (kv._1._2)).map(tokMap)
+		}
+
+		/**
+		Returns the chunks the token sequence overlaps
+		*/
+		def coveredChunks(seq:Seq[Token]): Seq[Chunk] =
+		{
+			val indexes = coveredChunkRange(seq)
+			coveredChunks(indexes.head, indexes.last)
+		}
+	
+		/**
+		Returns the chunks the indexes covers
+		*/
+		def coveredChunks(start:Int, end:Int): Seq[Chunk] =
+		{
+			return chunks.slice(start,end+1)
+		}
+
+		/**
+		Returns the range of indexes the token sequence overlaps
+		*/
+		def coveredChunkRange(seq:Seq[Token]): Range =
+		{
+			val indexed = chunks.zipWithIndex
+			val start = indexed.find(c => c._1.hasToken(seq.head)).get
+			val end = indexed.find(c => c._1.hasToken(seq.last)).get
+
+			return Range(start._2, end._2+1)
 		}
 
 		/**

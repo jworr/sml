@@ -17,6 +17,11 @@ object chunker
 	class Chunk(val tokens:Seq[Token], val chunkType:String)
 	{
 		/**
+		Returns true if the chunk contains the token
+		*/
+		def hasToken(token:Token):Boolean = tokens.contains(token)
+
+		/**
 		Determines if this Chunk matches the given type
 		*/
 		def matchesType(typeTag:String):Boolean =
