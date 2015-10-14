@@ -102,7 +102,7 @@ object perceptron
 	}
 
 	/**
-	Online trained binary perceptron with L2 regularization
+	Online trained averaged binary perceptron with L2 regularization
 	*/
 	class OnlineBinaryPerceptron(val dimension:Int, 
 		val learningRate:Double=.1,
@@ -111,7 +111,9 @@ object perceptron
 	{
 		//define the weights with a bias term at the end
 		val weights = new Array[Double](dimension+1)
+		val avgWeights = new Array[Double](dimension+1)
 		val bias = weights.size -1
+		var count = 1
 
 		/**
 		Update the model
@@ -119,33 +121,56 @@ object perceptron
 		def onlineTrain(example:LabeledInstance[Boolean])
 		{
 			//if the predicted label doesn't match the output update the weights
-			if(classify(example) != example.label)
+			if(trainingClassify(example) != example.label)
 			{
 				val direction = if(example.label) 1.0 else -1.0
 				
 				//add to the delta
 				for((feat,j) <- example.featuresWithIndex)
 				{
-					weights(j) += feat * direction * learningRate - (learningRate * weights(j) * regValue)
+					val delta = feat * direction * learningRate - (learningRate * weights(j) * regValue)
+					weights(j) += delta
+					avgWeights(j) += count * delta
 				}
 
 				//update the bias
-				weights(bias) += direction * learningRate - (learningRate * weights(bias) * regValue)
+				val biasDelta = direction * learningRate - (learningRate * weights(bias) * regValue)
+				weights(bias) += biasDelta
+				avgWeights(bias) += count * biasDelta
 			}
+
+			count += 1
 		}
 
 		/**
-		Classify an instance	
+		Classify an instance	while training
 		*/
-		def classify(instance:Instance):Boolean =
+		def trainingClassify(instance:Instance):Boolean =
 		{
 			//if the product is positive then the prediction is true
 			dotProduct(instance, weights) > 0.0
 		}
 
+		/**
+		Computes the final, averaged weights
+		*/
+		def finalWeights:Array[Double] =
+		{
+			weights.zip(avgWeights).map( p => p._1 - (p._2 / count) )
+		}
+
+		/**
+		Predict label
+		*/
+		def classify(instance:Instance):Boolean =
+		{
+			//do classification with the averaged weights
+			dotProduct(instance, finalWeights) > 0.0
+		}
+
 		def domain:Set[Boolean] = Set(true,false)
 
-		override def toString:String = "Online Perceptron " + compactStr(weights)
+		override def toString:String = "Online Perceptron " + compactStr(finalWeights)
 	}
 
 	/**
@@ -155,17 +180,6 @@ object perceptron
 	def dotProduct(instance:Instance, weights:Array[Double]):Double =
 	{
 		instance.features.zip(weights).map(p => p._1 * p._2).sum + weights.last
-		/*var i = 0
-		var total = 0
-		val limit = instance.features.size
-		val feats = instance.features
-
-		while(i < limit)
-		{
-			total += feats(i) * weights(i)
-		}
-
-		return total + weights.last*/
 	}
 
 	/**
@@ -188,7 +202,7 @@ object perceptron
 
 		val model = new BinaryPerceptron(2)
 
-		model.batchTrain(data)
+		model.batchTrain(Random.shuffle(data))
 		
 		println("batch")
 		println(model.weights.mkString(","))
@@ -205,7 +219,7 @@ object perceptron
 			online.onlineTrain(point)	
 		}
 
-		println(online.weights.mkString(","))
+		println(online)
 		for(point <- data)
 		{
 			println("choice " + online.classify(point) + " answer " + point.label)
