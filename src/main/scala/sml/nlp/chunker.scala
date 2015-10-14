@@ -22,6 +22,16 @@ object chunker
 		def hasToken(token:Token):Boolean = tokens.contains(token)
 
 		/**
+		Returns true if the chunk is a noun phrase
+		*/
+		def isNounPhrase:Boolean = chunkType.contains("NP")
+
+		/**
+		Returns true if the chunk is a verb phrase
+		*/
+		def isVerbPhrase:Boolean = chunkType.contains("VP")
+
+		/**
 		Determines if this Chunk matches the given type
 		*/
 		def matchesType(typeTag:String):Boolean =
@@ -43,6 +53,14 @@ object chunker
 		{
 			s"$chunkType: " + tokens.map(_.word).mkString(" ")
 		}
+
+		override def equals(other:Any):Boolean = other match
+		{
+			case that:Chunk => tokens == that.tokens && chunkType == that.chunkType
+			case _ => false
+		}
+
+		override def hashCode = tokens.hashCode + (7 * chunkType.hashCode)
 	}
 
 	/**

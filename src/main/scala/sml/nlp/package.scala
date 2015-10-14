@@ -31,6 +31,16 @@ package object nlp
 		def chunksBySentenceId(sentenceId:Int):Seq[Chunk] = chunks(sentenceId-1)
 
 		/**
+		Gets chunks by the given token
+		*/
+		def chunkByToken(token:Token):Chunk =
+		{
+			val sentChunks = chunksBySentenceId(token.sentenceId)
+
+			sentChunks.find(c => c.hasToken(token)).get
+		}
+
+		/**
 		Returns all the sentences chunked
 		*/
 		def chunks:Seq[Seq[Chunk]] = sentences.map(_.chunks)
@@ -118,7 +128,10 @@ package object nlp
 	class Sentence(val id: Int, allTokens: Seq[Token], edges: Map[(Int,Int), String])
 	{
 		val tokMap: TreeMap[Int,Token] = TreeMap(allTokens.map( (t:Token) => (t.id,t) ):_*)
-		val edgeTypes = edges
+
+		//map of token to dependency type, governor
+		val dependencies = edges.map( kv => (kv._1._2, (kv._2, kv._1._1)) ).toMap
+
 		val chunks:Seq[Chunk] = chunkSentence(this)
 
 		def tokens: Seq[Token] = tokMap.values.toSeq
@@ -133,7 +146,7 @@ package object nlp
 		def tokensWithType(depType: String): Iterable[Token] =
 		{
 			//get edges with the correct type, then get the end vertex of the edge, then look up the Token
-			edgeTypes.filter((kv) => (kv._2 == depType)).map((kv) => (kv._1._2)).map(tokMap)
+			dependencies.filter(kv => kv._2._1 == depType).map( kv => kv._1 ).map(tokMap)
 		}
 
 		/**
@@ -170,18 +183,45 @@ package object nlp
 		*/
 		def depType(token:Token): String =
 		{
-			//search for a dependency relationship
-			val edge = edgeTypes.find(e => (e._1._2 == token.id))
-
-			//if an edge is found
-			if(!edge.isEmpty)
+			if(dependencies.contains(token.id))
 			{
-				return edge.get._2
+				dependencies(token.id)._1
 			}
 			else
 			{
-				return null
+				null
 			}
+		}
+
+		/**
+		Returns the parent of the token
+		*/
+		def parent(token:Token):Token =
+		{
+			if(dependencies.contains(token.id))
+			{
+				tokMap(dependencies(token.id)._2)
+			}
+			else
+			{
+				null
+			}
+		}
+
+		/**
+		Returns all the ancestors of the token all the way back to the root
+		*/
+		def ancestors(token:Token):Seq[Token] =
+		{
+			def helper(current:Token, partial:List[Token]):List[Token] =
+			{
+				if(current == null)
+					return partial
+				else
+					return helper(parent(current), current :: partial)
+			}
+
+			return helper(token, List())
 		}
 
 		/**
