@@ -56,13 +56,10 @@ object perceptron
 						val direction = if(example.label) 1.0 else -1.0
 
 						//add to the delta
-						for((feat,j) <- example.featuresWithIndex)
+						for((feat,j) <- iterWithBias(example, bias))
 						{
 							delta(j) += feat * direction
 						}
-
-						//update the bias
-						delta(bias) += direction 
 						updates += 1
 					}
 				}
@@ -126,19 +123,13 @@ object perceptron
 				val direction = if(example.label) 1.0 else -1.0
 				
 				//add to the delta
-				for((feat,j) <- example.featuresWithIndex)
+				for((feat,j) <- iterWithBias(example, bias))
 				{
 					val delta = feat * direction * learningRate - (learningRate * weights(j) * regValue)
 					weights(j) += delta
 					avgWeights(j) += count * delta
 				}
-
-				//update the bias
-				val biasDelta = direction * learningRate - (learningRate * weights(bias) * regValue)
-				weights(bias) += biasDelta
-				avgWeights(bias) += count * biasDelta
 			}
-
 			count += 1
 		}
 
@@ -204,7 +195,7 @@ object perceptron
 				val avgAns = avgWeights(answer)
 
 				//add to the delta
-				for((feat,j) <- example.featuresWithIndex)
+				for((feat,j) <- iterWithBias(example, bias))
 				{
 					val predDelta = feat * learningRate - (learningRate * predWeight(j) * regValue)
 					val ansDelta = feat * learningRate - (learningRate * ansWeight(j) * regValue)
@@ -213,14 +204,6 @@ object perceptron
 					avgPred(j) -= count * predDelta
 					avgAns(j) += count * ansDelta
 				}
-
-				//update the bias
-				val predBiasDelta = learningRate - (learningRate * predWeight(bias) * regValue)
-				val ansBiasDelta = learningRate - (learningRate * ansWeight(bias) * regValue)
-				predWeight(bias) -= predBiasDelta
-				ansWeight(bias) += ansBiasDelta
-				avgPred(bias) -= count * predBiasDelta
-				avgAns(bias) += count * ansBiasDelta
 			}
 
 			count += 1
@@ -264,6 +247,14 @@ object perceptron
 
 			return "Multiclass Online Perceptron: " + domainStrs.mkString("\n")
 		}
+	}
+
+	/**
+	Iterate through the features of an instance with a bias term added
+	*/
+	def iterWithBias(instance:Instance, biasIndex:Int):Iterable[(Double, Int)] =
+	{
+		return instance.featuresWithIndex ++ Seq( (1.0, biasIndex) )
 	}
 
 	/**
