@@ -174,6 +174,99 @@ object perceptron
 	}
 
 	/**
+	Online trained averaged multiclass perceptron with L2 regularization
+	*/
+	class OnlinePerceptron[C](val dimension:Int, val classDomain:Set[C],
+		val learningRate:Double=.1,
+		val regValue:Double=0.0)
+	extends OnlineClassifier[C]
+	{
+		//define the weights with a bias term at the end
+		val weights = domain.map(d => (d,new Array[Double](dimension+1))).toMap
+		val avgWeights = domain.map(d => (d,new Array[Double](dimension+1))).toMap
+		val bias = weights.size -1
+		var count = 1
+
+		/**
+		Update the model
+		*/
+		def onlineTrain(example:LabeledInstance[C])
+		{
+			val predicted = trainingClassify(example)
+			val answer = example.label
+
+			//if the predicted label doesn't match the output update the weights
+			if(predicted != answer)
+			{
+				val predWeight = weights(predicted)
+				val ansWeight = weights(answer)
+				val avgPred = avgWeights(predicted)
+				val avgAns = avgWeights(answer)
+
+				//add to the delta
+				for((feat,j) <- example.featuresWithIndex)
+				{
+					val predDelta = feat * learningRate - (learningRate * predWeight(j) * regValue)
+					val ansDelta = feat * learningRate - (learningRate * ansWeight(j) * regValue)
+					predWeight(j) -= predDelta
+					ansWeight(j) += ansDelta
+					avgPred(j) -= count * predDelta
+					avgAns(j) += count * ansDelta
+				}
+
+				//update the bias
+				val predBiasDelta = learningRate - (learningRate * predWeight(bias) * regValue)
+				val ansBiasDelta = learningRate - (learningRate * ansWeight(bias) * regValue)
+				predWeight(bias) -= predBiasDelta
+				ansWeight(bias) += ansBiasDelta
+				avgPred(bias) -= count * predBiasDelta
+				avgAns(bias) += count * ansBiasDelta
+			}
+
+			count += 1
+		}
+
+		/**
+		Classify an instance	while training
+		*/
+		def trainingClassify(instance:Instance):C =
+		{
+			//if the product is positive then the prediction is true
+			domain.maxBy(d => dotProduct(instance, weights(d)))
+		}
+
+		/**
+		Computes the final, averaged weights
+		*/
+		def finalWeights(label:C):Array[Double] =
+		{
+			weights(label).zip(avgWeights(label)).map(p => p._1 - (p._2 / count))
+		}
+
+		/**
+		Predict label
+		*/
+		def classify(instance:Instance):C =
+		{
+			//do classification with the averaged weights
+			domain.maxBy(d => dotProduct(instance, finalWeights(d)))
+		}
+
+		def domain:Set[C] = classDomain
+
+		override def toString:String = 
+		{
+			//generate a str for each domain
+			val domainStrs = for(d <- domain) yield
+			{
+				s"Domain: $d " + compactStr(finalWeights(d))
+			}
+
+			return "Multiclass Online Perceptron: " + domainStrs.mkString("\n")
+		}
+	}
+
+	/**
 	Computes the dot product between the instance features and
 	the weights
 	*/
@@ -187,10 +280,7 @@ object perceptron
 	*/
 	def magnitude(vector:Array[Double]):Double = sqrt(vector.map(i => pow(i,2.0)).sum)
 
-	/**
-	Do a couple tests
-	*/
-	def main(args:Array[String])
+	def runTest()
 	{
 		val data = List( new LabeledVectorInstance(Array(1,1), true),
 		new LabeledVectorInstance(Array(3,1), true),
@@ -223,6 +313,47 @@ object perceptron
 		for(point <- data)
 		{
 			println("choice " + online.classify(point) + " answer " + point.label)
+		}	
+	}
+
+	def multiClassTest()
+	{
+		val data = List( 
+		new LabeledVectorInstance(Array(1,1), "class1"),
+		new LabeledVectorInstance(Array(3,1), "class1"),
+		new LabeledVectorInstance(Array(2,3), "class1"),
+		new LabeledVectorInstance(Array(1,2), "class2"),
+		new LabeledVectorInstance(Array(0,0), "class1"),
+		new LabeledVectorInstance(Array(-1,-1), "class2"),
+		new LabeledVectorInstance(Array(-2,-4), "class2"),
+		new LabeledVectorInstance(Array(-1,1), "class3"),
+		new LabeledVectorInstance(Array(-3,2), "class3"),
+		new LabeledVectorInstance(Array(-2,1), "class3"),
+		new LabeledVectorInstance(Array(-1,3), "class3")
+		)
+	
+		val online = new OnlinePerceptron(2, Set("class1", "class2", "class3"))
+
+		println("online")
+		for(point <- Random.shuffle(data))
+		{
+			online.onlineTrain(point)	
 		}
+
+		println(online)
+		for(point <- data)
+		{
+			println("choice " + online.classify(point) + " answer " + point.label)
+		}
+	}
+
+	/**
+	Do a couple tests
+	*/
+	def main(args:Array[String])
+	{
+		runTest
+
+		multiClassTest
 	}
 }
