@@ -57,6 +57,27 @@ object io
 	def ls(path:Path): Iterable[String] = ls(path.toString)
 
 	/**
+	Creates a directory if it does not exist
+	*/
+	def mkDir(path:String):Boolean =
+	{
+		val file = new File(path)
+		
+		//if the dir doesn't exist create it
+		if(!file.exists)
+		{
+			file.mkdirs
+			true
+		}
+		else
+		{
+			false
+		}
+	}
+
+	def mkDir(path:Path):Boolean = mkDir(path.toString)
+
+	/**
 	Removes the file extension suffix from a doc id
 	*/
 	def removeSuffix(docId:String, suffixes:Set[String]):String = 
