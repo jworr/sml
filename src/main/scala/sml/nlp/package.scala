@@ -249,6 +249,42 @@ package object nlp
 		def size: Int = tokens.size
 
 		override def toString = tokens.map(_.toString).mkString(" ")
+
+		def toDot:String = toDot(Seq(), "")
+
+		/**
+		Returns a DOT graph representation of the dependency graph
+		*/
+		def toDot(groups:Iterable[Set[Token]], caption:String):String =
+		{
+			def strip(str:String):String = str.replaceAll("\"", "")
+
+			//build color groups
+			val colorMap = groups.zip(colors).map(p => p._1.map(i => (i, p._2))).flatten.toMap
+
+			//build a box for each word
+			val words = for(token <- tokens if dependencies.contains(token.id)) yield
+			{
+				val id = token.id
+				val word = strip(token.word)
+				val pos = token.pos
+				val colorTag = if(colorMap.contains(token)) ("color=" + colorMap(token)) else ""
+
+				s"""s$id [shape="box",label="$id: $word $pos" $colorTag];"""
+			}
+
+			//build an edge for each dependency
+			val edges = for( (end, (depType, start)) <- dependencies ) yield
+			{
+				s"""s$start -> s$end [label="$depType"];"""
+			}
+
+			val text = strip(toString) + (if(caption.size > 0) ("\n" + strip(caption)) else "")
+			
+			val fullCaption = Seq(s"""label="$text";""", "labelloc=bottom;", "labeljust=left;")
+
+			return (Seq("digraph G{") ++ words ++ edges ++ fullCaption ++ Seq("}")).mkString("\n")
+		}
 	}
 
 	/**
@@ -472,6 +508,11 @@ package object nlp
 	"LS", "MD", "NN",	"NNS", "NNP", "NNPS", "PDT", "POS", "PRP", "PRP$", "RB", 
 	"RBR", "RBS", "RP", "SYM", "TO", "UH", "VB", "VBD", "VBG", "VBN", "VBP", 
 	"VBZ", "WDT", "WP", "WP$", "WRB")
+
+	/**
+	Give some colors for graphviz
+	*/
+	val colors = Seq("green", "red", "blue", "yellow", "purple", "pink", "orange")
 
 	/**
 	Main Function to run a simple test
