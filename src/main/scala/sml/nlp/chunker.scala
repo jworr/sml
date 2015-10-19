@@ -1,5 +1,6 @@
 package sml.nlp
 
+import scala.math.Ordered
 import scala.collection.mutable.ArrayBuffer
 import java.io.FileInputStream
 import opennlp.tools.chunker.{ChunkerModel, ChunkerME}
@@ -14,7 +15,7 @@ object chunker
 	/**
 	A grouping over tokens
 	*/
-	class Chunk(val tokens:Seq[Token], val chunkType:String)
+	class Chunk(val tokens:Seq[Token], val chunkType:String) extends Ordered[Chunk]
 	{
 		/**
 		Returns true if the chunk contains the token
@@ -61,6 +62,8 @@ object chunker
 		}
 
 		override def hashCode = tokens.hashCode + (7 * chunkType.hashCode)
+
+		def compare(that:Chunk):Int = tokens.head.id.compare(that.tokens.head.id)
 	}
 
 	/**
