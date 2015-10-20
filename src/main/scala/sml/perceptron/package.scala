@@ -9,7 +9,7 @@ import sml.learn._
 /**
 A package of perceptron based classifiers
 */
-object perceptron
+package object perceptron
 {
 	/**
 	A perceptron model for binary classifications with L2 regularization
@@ -254,7 +254,7 @@ object perceptron
 	*/
 	def iterWithBias(instance:Instance, biasIndex:Int):Iterable[(Double, Int)] =
 	{
-		return instance.featuresWithIndex ++ Seq( (1.0, biasIndex) )
+		instance.featuresWithIndex ++ Seq( (1.0, biasIndex) )
 	}
 
 	/**
