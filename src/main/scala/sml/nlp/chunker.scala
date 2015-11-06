@@ -15,7 +15,7 @@ object chunker
 	/**
 	A grouping over tokens
 	*/
-	class Chunk(val tokens:Seq[Token], val chunkType:String) extends Ordered[Chunk]
+	class Chunk(val tokens:Seq[Token], val chunkType:String) extends Seq[Token] with Ordered[Chunk]
 	{
 		/**
 		Returns true if the chunk contains the token
@@ -49,6 +49,12 @@ object chunker
 				typeTag == chunkType
 			}
 		}
+
+		def apply(index:Int):Token = tokens(index)
+
+		def length:Int = tokens.size
+
+		def iterator:Iterator[Token] = tokens.iterator
 
 		override def toString:String =
 		{
