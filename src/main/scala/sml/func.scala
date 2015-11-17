@@ -1,5 +1,7 @@
 package sml
 
+import scala.collection.mutable.ArrayBuffer
+
 /**
 Contains tools for functional programming
 */
@@ -93,5 +95,38 @@ object func
 		}
 
 		return values.flatten
+	}
+
+	/**
+	Does all combinations of all given collections - subway sandwich style
+	*/
+	def combine[T](items:Iterable[T]*):Iterable[Iterable[T]] =
+	{
+		val answer = new ArrayBuffer[Iterable[T]]()
+
+		def helper(part:List[T], lists:Iterable[Iterable[T]])
+		{
+			if(lists.size > 0)
+			{
+				//get the current iterable to add to everything
+				val current = lists.head
+				val rest = lists.tail
+
+				//for each item in the current collection, add it to all the
+				//existing partial solutions
+				for( item <- current ) 
+				{
+					helper(item :: part, rest)
+				}
+			}
+			else
+			{
+				answer += part
+			}
+		}
+
+		helper(List(), items)
+
+		return answer
 	}
 }
