@@ -209,6 +209,18 @@ package object nlp
 		}
 
 		/**
+		Returns the children of the token
+		*/
+		def children(token:Token):Iterable[Token] =
+		{
+			//find all the children of the token
+			for( (current,(depType, gov)) <- dependencies if tokMap(gov) == token ) yield
+			{
+				tokMap(current)
+			}
+		}
+
+		/**
 		Returns all the ancestors of the token all the way back to the root
 		*/
 		def ancestors(token:Token):Seq[Token] =
@@ -223,6 +235,19 @@ package object nlp
 
 			return helper(token, List())
 		}
+
+		/**
+		Returns the common ancestor 
+		*/
+		def commonAncestor(one:Token, another:Token):Token =
+		{
+			ancestors(one).zip(ancestors(another)).takeWhile(p => p._1 == p._2).last._1
+		}
+
+		/**
+		Returns the depth of the token in the dependency parse
+		*/
+		def depth(token:Token):Int = ancestors(token).size - 1
 
 		/**
 		Returns the maximum token id in the sentence
@@ -249,6 +274,14 @@ package object nlp
 		def size: Int = tokens.size
 
 		override def toString = tokens.map(_.toString).mkString(" ")
+
+		override def equals(other:Any):Boolean = other match
+		{
+			case that:Sentence => that.id == id
+			case _ => false
+		}
+
+		override def hashCode:Int = id.hashCode
 
 		def toDot:String = toDot(Seq(), "")
 
@@ -304,6 +337,17 @@ package object nlp
 		def isAdv = pos.startsWith("RB")
 
 		def isPronoun = pos.startsWith("PR")
+
+		def simplePOS:String =
+		{
+			if(isVerb) "VERB"
+			else if(isNoun) "NOUN"
+			else if(isProperNoun) "PROPERNOUN"
+			else if(isAdj) "ADJECTIVE"
+			else if(isAdv) "ADVERB"
+			else if(isPronoun) "PRONOUN"
+			else "OTHER"
+		}
 
 		/**
 		Returns true if the token contains the offset
