@@ -200,7 +200,7 @@ package object nlp
 		{
 			if(dependencies.contains(token.id))
 			{
-				tokMap(dependencies(token.id)._2)
+				tokMap.getOrElse(dependencies(token.id)._2, null)
 			}
 			else
 			{
@@ -214,7 +214,7 @@ package object nlp
 		def children(token:Token):Iterable[Token] =
 		{
 			//find all the children of the token
-			for( (current,(depType, gov)) <- dependencies if tokMap(gov) == token ) yield
+			for( (current,(depType, gov)) <- dependencies if tokMap.getOrElse(gov,null) == token ) yield
 			{
 				tokMap(current)
 			}
