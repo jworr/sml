@@ -9,7 +9,7 @@ import sml.learn._
 /**
 A package of perceptron based classifiers
 */
-package object perceptron
+object perceptron
 {
 	/**
 	A perceptron model for binary classifications with L2 regularization

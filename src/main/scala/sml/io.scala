@@ -110,7 +110,7 @@ object io
 		zipByFunction(s => removeSuffix(baseName(s)), superset, subset)
 	}
 
-	val badSuffix = Set("xml", "txt", "sgm", "cmp", "rich_ere")
+	val badSuffix = Set("xml", "txt", "sgm", "cmp", "rich_ere", "apf")
 
 	/*No idea why this won't work
 	def join(paths: String*): String =

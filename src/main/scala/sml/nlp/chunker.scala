@@ -50,6 +50,11 @@ object chunker
 			}
 		}
 
+		/**
+		Returns a Range (span) for the chunk
+		*/
+		def toSpan:Range = Range(this.head.id, this.last.id+1)
+
 		def apply(index:Int):Token = tokens(index)
 
 		def length:Int = tokens.size

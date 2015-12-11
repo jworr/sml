@@ -129,4 +129,34 @@ object func
 
 		return answer
 	}
+
+	implicit class ExtendedSeq[T](val items:Seq[T])
+	{
+		/**
+		Groups up adjancent items that are true for the same predicate
+		*/
+		def adjGroup[V](pred:T => V):Iterable[Seq[T]] =
+		{
+			def helper(current:Seq[T], results:Vector[Seq[T]]):Vector[Seq[T]] =
+			{
+				//if there is nothing left then return
+				if(current.isEmpty)
+					return results
+				
+				//if there is only one thing left then return it in its own group
+				else if( current.tail.isEmpty )
+					return results :+ current
+				
+				//else split up what remains
+				else
+				{
+					val (start,end) = current.partition(i => pred(i) == pred(current.head))
+					
+					return helper(end, results :+ start)
+				}
+			}
+
+			return helper(items, Vector())
+		}
+	}
 }

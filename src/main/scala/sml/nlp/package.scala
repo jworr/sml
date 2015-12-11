@@ -1,7 +1,7 @@
 package sml
 
-import scala.xml.Node
-import scala.xml.XML.loadFile
+import scala.xml.{Node, Elem}
+import scala.xml.XML.{loadFile, loadString}
 import scala.collection.immutable.TreeMap
 import scala.collection.mutable.HashMap
 import scala.collection.Map
@@ -77,6 +77,16 @@ package object nlp
 		Returns all the tokens
 		*/
 		def tokens:Seq[Token] = sentences.map(_.tokens).flatten
+
+		/**
+		Returns the syntatic head of the span - the highest according to the
+		parse tree
+		*/
+		def syntaticHead(seq:Iterable[Token]):Token =
+		{
+			//assume all the tokens in the sequence are in the same sentence
+			sentenceByToken(seq.head).syntaticHead(seq)	
+		}
 
 		/**
 		Returns the window, including the given sequence, on either side of the
@@ -183,7 +193,7 @@ package object nlp
 		*/
 		def depType(token:Token): String =
 		{
-			if(dependencies.contains(token.id))
+			if(hasDepType(token))
 			{
 				dependencies(token.id)._1
 			}
@@ -250,6 +260,14 @@ package object nlp
 		def depth(token:Token):Int = ancestors(token).size - 1
 
 		/**
+		Returns the token that is the syntatic head of the collection
+		*/
+		def syntaticHead(tokens:Iterable[Token]):Token =
+		{
+			tokens.minBy(t => depth(t))
+		}
+
+		/**
 		Returns the maximum token id in the sentence
 		*/
 		def maxTokenId: Int = size
@@ -258,6 +276,8 @@ package object nlp
 		Returns the minimum token id
 		*/
 		def minTokenId: Int = 1
+
+		def hasDepType(token:Token):Boolean = token.sentenceId == id && dependencies.contains(token.id)
 
 		def hasDepType(token: Token, dep: String): Boolean = depType(token) == dep
 
@@ -454,23 +474,37 @@ package object nlp
 	def loadDocs(dir:String, suffix:String, docNames:Iterable[String]): Iterable[Document] = loadDocs(dir, "", suffix, docNames)
 
 	/**
+	Parses the document from the given string
+	*/
+	def parseDocFromString(xml:String, docId:String): Document =
+	{
+		parseXMLDoc(loadString(xml), docId)
+	}
+
+	/**
 	Returns a document parsed from an xml file
 	*/
-	def parseDoc(fileName: String, prefix:String): Document =
+	def parseDoc(fileName:String, prefix:String): Document =
 	{
-		//load the doc as xml
-		val xmlDoc = loadFile(fileName)
-
-		//parse all the sentences
-		val sentences = (xmlDoc \\ "sentences" \ "sentence").map(parseSentence)
-
-		//parse out all the coref groups
-		val coref = (xmlDoc \ "root" \ "document" \ "coreference" \ "coreference").map(parseCoref)
-
-		new Document(parseDocId(fileName,prefix), sentences, coref)
+		//load the doc as xml and parse it
+		parseXMLDoc(loadFile(fileName), parseDocId(fileName,prefix))
 	}
 
 	def parseDoc(fileName:String): Document = parseDoc(fileName, "")
+
+	/**
+	Parses the document from the xml
+	*/
+	def parseXMLDoc(xml:Elem, docId:String): Document =
+	{
+		//parse all the sentences
+		val sentences = (xml \\ "sentences" \ "sentence").map(parseSentence)
+
+		//parse out all the coref groups
+		val coref = (xml \ "root" \ "document" \ "coreference" \ "coreference").map(parseCoref)
+
+		return new Document(docId, sentences, coref)
+	}
 
 	/**
 	Strips off any prefix or suffix around the file id
