@@ -249,9 +249,15 @@ package object nlp
 		/**
 		Returns the common ancestor 
 		*/
-		def commonAncestor(one:Token, another:Token):Token =
+		def commonAncestor(one:Token, another:Token):Option[Token] =
 		{
-			ancestors(one).zip(ancestors(another)).takeWhile(p => p._1 == p._2).last._1
+			val prefix = ancestors(one).zip(ancestors(another)).takeWhile(p => p._1 == p._2)
+
+			//make sure there is a prefix
+			if(prefix.isEmpty)
+				None
+			else
+				Some(prefix.last._1)
 		}
 
 		/**

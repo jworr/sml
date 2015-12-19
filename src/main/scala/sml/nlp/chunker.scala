@@ -15,7 +15,7 @@ object chunker
 	/**
 	A grouping over tokens
 	*/
-	class Chunk(val tokens:Seq[Token], val chunkType:String) extends Seq[Token] with Ordered[Chunk]
+	class Chunk(val tokens:Seq[Token], val chunkType:String) extends Ordered[Chunk]
 	{
 		/**
 		Returns true if the chunk contains the token
@@ -53,7 +53,7 @@ object chunker
 		/**
 		Returns a Range (span) for the chunk
 		*/
-		def toSpan:Range = Range(this.head.id, this.last.id+1)
+		def toSpan:Range = Range(tokens.head.id, tokens.last.id+1)
 
 		def apply(index:Int):Token = tokens(index)
 
