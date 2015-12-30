@@ -58,6 +58,14 @@ package object nlp
 		}
 
 		/**
+		 * Returns the Coref group for the token if any
+		 */
+		def corefGroup(token:Token):Option[CorefGroup] =
+		{
+			corefGroups.find(_.inGroup(token))
+		}
+
+		/**
 		Returns the token identified by the sentence and token ids
 		*/
 		def tokenById(sentenceId:Int, tokenId:Int): Token =
@@ -435,8 +443,16 @@ package object nlp
 		/**
 		Returns true if the token is apart of a mention in the set
 		*/
-		def inGroup(token: Token): Boolean = !mentions.find((m) => m.contains(token)).isEmpty
+		def inGroup(token: Token):Boolean = 
+		{
+			mentions.find((m) => m.contains(token)).nonEmpty
+		}
 
+		/**
+		 * Returns true if the token is part of the cannonical mention
+		 */
+		def isCannonical(token:Token):Boolean = cannonical.contains(token)
+		
 		override def toString = "Coref Group:\n" + mentions.mkString("\n")
 	}
 
