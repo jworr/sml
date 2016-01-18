@@ -70,12 +70,17 @@ object perceptron
 					//update each weight
 					for( (delt, j) <- delta.zipWithIndex)
 					{
-						weights(j) += learningRate * delta(j)/updates - (learningRate * weights(j) * regValue)
+						weights(j) += (delt/updates - (weights(j) * regValue)) * learningRate
 					}
+
+					//check for convergance
+					converged = magnitude(delta) / updates < threshold
+				}
+				else
+				{
+					converged = true
 				}
 			
-				//check for convergance
-				converged = magnitude(delta) < threshold
 				i += 1
 			}
 				
