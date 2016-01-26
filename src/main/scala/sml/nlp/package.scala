@@ -384,6 +384,17 @@ package object nlp
 		}
 
 		/**
+		 * Returns true if the token contains alpha-numeric characters
+		 */
+		def alphaNum:Boolean = 
+		{
+			if(!blackList.contains(word))
+				word.exists(c => c.isLetterOrDigit)
+			else
+				false
+		}
+		
+		/**
 		Returns true if the token contains the offset
 		*/
 		def containsOffset(offset:Int):Boolean = offset >= start && offset <= end
@@ -608,6 +619,8 @@ package object nlp
 	"LS", "MD", "NN",	"NNS", "NNP", "NNPS", "PDT", "POS", "PRP", "PRP$", "RB", 
 	"RBR", "RBS", "RP", "SYM", "TO", "UH", "VB", "VBD", "VBG", "VBN", "VBP", 
 	"VBZ", "WDT", "WP", "WP$", "WRB")
+
+	val blackList = Set("'s", "-LRB-", "-RRB-", "-LSB-", "-RSB-")
 
 	/**
 	Give some colors for graphviz

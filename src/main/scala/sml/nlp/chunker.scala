@@ -33,6 +33,11 @@ object chunker
 		def isVerbPhrase:Boolean = chunkType.contains("VP")
 
 		/**
+		 * Returns true if the chunk contains alpha-numeric characters
+		 */
+		def alphaNum:Boolean = tokens.exists(t => t.alphaNum)
+
+		/**
 		Determines if this Chunk matches the given type
 		*/
 		def matchesType(typeTag:String):Boolean =
