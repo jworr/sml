@@ -69,6 +69,16 @@
 		<artifactId>opennlp-tools</artifactId>
 		<version>1.6.0</version>
 	</dependency>
+
+	<!-- Test -->
+	 <dependency>
+      <groupId>org.scalatest</groupId>
+      <artifactId>scalatest_2.11</artifactId>
+      <version>2.2.4</version>
+      <scope>test</scope>
+    </dependency> 
+
+
     <!-- Test -->
     <!--
 	 <dependency>
@@ -105,7 +115,7 @@
           <execution>
             <goals>
               <goal>compile</goal>
-              <!-- <goal>testCompile</goal> -->
+              <goal>testCompile</goal>
             </goals>
             <configuration>
               <args>
@@ -117,21 +127,27 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.6</version>
-        <configuration>
-          <useFile>false</useFile>
-          <disableXmlReport>true</disableXmlReport>
-          <!-- If you have classpath issue like NoDefClassError,... -->
-          <!-- useManifestOnlyJar>false</useManifestOnlyJar -->
-          <includes>
-            <include>**/*Test.*</include>
-            <include>**/*Suite.*</include>
-          </includes>
-        </configuration>
-      </plugin>
-    </plugins>
+
+		<!-- configure scalatest -->
+		<plugin>
+			<groupId>org.scalatest</groupId>
+			<artifactId>scalatest-maven-plugin</artifactId>
+			<version>1.0</version>
+			<configuration>
+			<reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
+			<junitxml>.</junitxml>
+			<filereports>WDF TestSuite.txt</filereports>
+			</configuration>
+			<executions>
+				<execution>
+				<id>test</id>
+				<goals>
+					<goal>test</goal>
+				</goals>
+				</execution>
+			</executions>
+		</plugin>
+
+	   </plugins>
   </build>
 </project>

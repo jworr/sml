@@ -24,6 +24,7 @@ object perceptron
 		val weights = new Array[Double](dimension+1)
 		val bias = weights.size -1
 		var trainTime = 0.0
+		var rounds = 0
 
 		/**
 		Train the model
@@ -85,6 +86,7 @@ object perceptron
 			}
 				
 			trainTime = currentTimeMillis - start
+			rounds = i - 1
 
 			return converged
 		}
@@ -275,81 +277,4 @@ object perceptron
 	Computes the magnitude of the vector
 	*/
 	def magnitude(vector:Array[Double]):Double = sqrt(vector.map(i => pow(i,2.0)).sum)
-
-	def runTest()
-	{
-		val data = List( new LabeledVectorInstance(Array(1,1), true),
-		new LabeledVectorInstance(Array(3,1), true),
-		new LabeledVectorInstance(Array(2,3), true),
-		new LabeledVectorInstance(Array(1,2), false),
-		new LabeledVectorInstance(Array(0,0), true),
-		new LabeledVectorInstance(Array(-1,-1), false),
-		new LabeledVectorInstance(Array(-2,-4), false))
-
-		val model = new BinaryPerceptron(2)
-
-		model.batchTrain(Random.shuffle(data))
-		
-		println("batch")
-		println(model.weights.mkString(","))
-		for(point <- data)
-		{
-			println("choice " + model.classify(point) + " answer " + point.label)
-		}
-
-		val online = new OnlineBinaryPerceptron(2, .5)
-
-		println("online")
-		for(point <- Random.shuffle(data))
-		{
-			online.onlineTrain(point)	
-		}
-
-		println(online)
-		for(point <- data)
-		{
-			println("choice " + online.classify(point) + " answer " + point.label)
-		}	
-	}
-
-	def multiClassTest()
-	{
-		val data = List( 
-		new LabeledVectorInstance(Array(1,1), "class1"),
-		new LabeledVectorInstance(Array(3,1), "class1"),
-		new LabeledVectorInstance(Array(2,3), "class1"),
-		new LabeledVectorInstance(Array(1,2), "class2"),
-		new LabeledVectorInstance(Array(0,0), "class1"),
-		new LabeledVectorInstance(Array(-1,-1), "class2"),
-		new LabeledVectorInstance(Array(-2,-4), "class2"),
-		new LabeledVectorInstance(Array(-1,1), "class3"),
-		new LabeledVectorInstance(Array(-3,2), "class3"),
-		new LabeledVectorInstance(Array(-2,1), "class3"),
-		new LabeledVectorInstance(Array(-1,3), "class3")
-		)
-	
-		val online = new OnlinePerceptron(2, Set("class1", "class2", "class3"))
-
-		println("online")
-		for(point <- Random.shuffle(data))
-		{
-			online.onlineTrain(point)	
-		}
-
-		println(online)
-		for(point <- data)
-		{
-			println("choice " + online.classify(point) + " answer " + point.label)
-		}
-	}
-
-	/**
-	Do a couple tests
-	*/
-	def main(args:Array[String])
-	{
-		runTest
-
-		multiClassTest
-	}
 }
