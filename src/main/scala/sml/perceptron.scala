@@ -202,8 +202,8 @@ object perceptron
 				//add to the delta
 				for((feat,j) <- iterWithBias(example, bias))
 				{
-					val predDelta = feat * learningRate + (learningRate * predWeight(j) * regValue)
-					val ansDelta = feat * learningRate - (learningRate * ansWeight(j) * regValue)
+					val predDelta = (feat + predWeight(j) * regValue) * learningRate 
+					val ansDelta = (feat - ansWeight(j) * regValue) * learningRate
 					predWeight(j) -= predDelta
 					ansWeight(j) += ansDelta
 					avgPred(j) -= count * predDelta
