@@ -14,7 +14,7 @@ object naivebayes
 	/**
 	Common NaiveBayes functionality
 	*/
-	abstract class NaiveBayes[C](val classDomain:Set[C], val dimension:Int) extends BatchClassifier[C] with OnlineClassifier[C]
+	abstract class NaiveBayes[C](val classDomain:Set[C], val dimension:Int) extends BatchClassifier[Int,C] with OnlineClassifier[Int,C]
 	{
 		val index = domain.zipWithIndex.toMap
 		val classCounts = Array.fill(domain.size)(0.0)
@@ -22,7 +22,7 @@ object naivebayes
 		/**
 		Trains the model by collecting sufficent statistics
 		*/
-		def batchTrain(examples:Iterable[LabeledInstance[C]]):Boolean =
+		def batchTrain(examples:Iterable[LabeledInstance[Int,C]]):Boolean =
 		{
 			//accumulate statistics from each example
 			examples.foreach(i => onlineTrain(i))
@@ -32,7 +32,7 @@ object naivebayes
 		/**
 		Classifies the instance via Bayes rule
 		*/
-		def classify(inst:Instance):C =
+		def classify(inst:Instance[Int]):C =
 		{
 			//for each class compute the proportional probability
 			classDomain.maxBy(c => prob(inst,c))
@@ -40,7 +40,7 @@ object naivebayes
 
 		def domain:Set[C] = classDomain
 
-		def prob(example:Instance, label:C):Double
+		def prob(example:Instance[Int], label:C):Double
 	}
 
 	/**
@@ -52,7 +52,7 @@ object naivebayes
 		//class -> feature -> count
 		val featCounts = domain.map(c => Range(0,dimension).map(d => new HashMap[Double,Int]()).toArray).toArray
 
-		def onlineTrain(example:LabeledInstance[C])
+		def onlineTrain(example:LabeledInstance[Int,C])
 		{
 			val labelIndex = index(example.label)
 				
@@ -60,7 +60,7 @@ object naivebayes
 			classCounts(labelIndex) += 1
 
 			//increment each feature count
-			for((feat,i) <- example.featuresWithIndex)
+			for((i,feat) <- example.featuresWithKey)
 			{
 				val featDist = featCounts(labelIndex)(i)
 				featDist(feat) = featDist.getOrElse(feat,0) + 1
@@ -70,12 +70,12 @@ object naivebayes
 		/**
 		Compute the proportional probability of the example being the given class
 		*/
-		def prob(example:Instance, label:C):Double =
+		def prob(example:Instance[Int], label:C):Double =
 		{
 			val classProb = log(classCounts(index(label)) + 1)
 
 			//for each feature compute the log probability
-			val featProb = for((feat,i) <- example.featuresWithIndex) yield
+			val featProb = for((i,feat) <- example.featuresWithKey) yield
 			{
 				val featDist = featCounts(index(label))(i)
 				(log(featDist.getOrElse(feat,0) + 1) - log(featDist.values.sum + featDist.size))
@@ -125,7 +125,7 @@ object naivebayes
 		//class -> feature -> count
 		val featCounts = domain.map(c => Range(0,dimension).map(d => 1.0).toArray).toArray
 
-		def onlineTrain(example:LabeledInstance[C])
+		def onlineTrain(example:LabeledInstance[Int,C])
 		{
 			val labelIndex = index(example.label)
 				
@@ -133,7 +133,7 @@ object naivebayes
 			classCounts(labelIndex) += 1
 
 			//increment each feature count
-			for((feat,i) <- example.featuresWithIndex)
+			for((i,feat) <- example.featuresWithKey)
 			{
 				featCounts(labelIndex)(i) += 1
 			}
@@ -142,13 +142,13 @@ object naivebayes
 		/**
 		Compute the proportional probability of the example being the given class
 		*/
-		def prob(example:Instance, label:C):Double =
+		def prob(example:Instance[Int], label:C):Double =
 		{
 			val classProb = log(classCounts(index(label)) + 1)
 			val denom = featCounts(index(label)).sum
 
 			//for each feature compute the log probability
-			val featProb = for((feat,i) <- example.featuresWithIndex) yield
+			val featProb = for((i,feat) <- example.featuresWithKey) yield
 			{
 				val num = featCounts(index(label))(i)
 				(log(num) - log(denom)) * feat
@@ -178,7 +178,7 @@ object naivebayes
 		/**
 		Use model averaging to compute the probability of the instance
 		*/
-		override def prob(example:Instance, label:C):Double =
+		override def prob(example:Instance[Int], label:C):Double =
 		{
 			val regTerm = pow(regValue, -1 * (dataCount +1))
 			val classIndex = index(label)
@@ -195,7 +195,7 @@ object naivebayes
 			}
 			
 			//total up the feature probabilities
-			val featProb = for((feat,i) <- example.featuresWithIndex) yield
+			val featProb = for((i,feat) <- example.featuresWithKey) yield
 			{
 				val margin = logMargLike(i, feat)
 				val cond = logCondLike(i, classIndex, feat) + regTerm

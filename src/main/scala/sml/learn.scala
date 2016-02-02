@@ -8,12 +8,12 @@ object learn
 	/**
 	Defines a training instance, assumes all features are of the same type
 	*/
-	trait Instance
+	trait Instance[K]
 	{
 		/**
 		Returns the value of the feature at the given index
 		*/
-		def featureAt(index:Int):Double
+		def featureAt(key:K):Double
 
 		/**
 		Iterates over all the features
@@ -23,30 +23,36 @@ object learn
 		/**
 		Iterates over the features with an Index
 		*/
-		def featuresWithIndex:Iterable[(Double,Int)] = features.zipWithIndex
+		def featuresWithKey:Iterable[(K,Double)]
 
 		/**
 		Returns the number of features in the example
 		*/
 		def size:Int
 	}
-
+	
 	/**
 	Defines a training instance with a label
 	*/
-	trait LabeledInstance[C] extends Instance
+	trait LabeledInstance[K,C] extends Instance[K]
 	{
 		def label:C
 	}
 
+	type DenseInstance = Instance[Int]
+
+	type LabeledDenseInstance[C] = LabeledInstance[Int,C]
+
 	/**
 	Defines a simple vector instance
 	*/
-	class VectorInstance(val values:Array[Double]) extends Instance
+	class VectorInstance(val values:Array[Double]) extends DenseInstance
 	{
 		def featureAt(index:Int):Double = values(index)
 
 		def features:Iterable[Double] = values
+
+		def featuresWithKey:Iterable[(Int,Double)] = values.zipWithIndex.map(p => (p._2, p._1))
 
 		def size:Int = values.size
 
@@ -56,15 +62,9 @@ object learn
 	/**
 	Defines a simple labeled instance
 	*/
-	class LabeledVectorInstance[C](val values:Array[Double], val classLabel:C) extends LabeledInstance[C]
+	class LabeledVectorInstance[C](override val values:Array[Double], val classLabel:C) extends VectorInstance(values) with LabeledDenseInstance[C]
 	{
-		def featureAt(index:Int):Double = values(index)
-
-		def features:Iterable[Double] = values
-
-		def size:Int = values.size
-
-		def label = classLabel
+		override def label = classLabel
 
 		override def toString:String = classLabel + ":" + values.mkString(", ")
 	}
@@ -72,9 +72,9 @@ object learn
 	/**
 	Defines the behavior of a classifier
 	*/
-	trait Classifier[C]
+	trait Classifier[K,C]
 	{
-		def classify(example:Instance):C
+		def classify(example:Instance[K]):C
 
 		def domain:Set[C]
 	}
@@ -82,17 +82,17 @@ object learn
 	/**
 	A classifier that is batch trained
 	*/
-	trait BatchClassifier[C] extends Classifier[C]
+	trait BatchClassifier[K,C] extends Classifier[K,C]
 	{
-		def batchTrain(examples:Iterable[LabeledInstance[C]]):Boolean
+		def batchTrain(examples:Iterable[LabeledInstance[K,C]]):Boolean
 	}
 
 	/**
 	A classifier that is online trained
 	*/
-	trait OnlineClassifier[C] extends Classifier[C]
+	trait OnlineClassifier[K,C] extends Classifier[K,C]
 	{
-		def onlineTrain(example:LabeledInstance[C])
+		def onlineTrain(example:LabeledInstance[K,C])
 	}
 
 	/**

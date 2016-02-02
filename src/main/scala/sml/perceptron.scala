@@ -18,7 +18,7 @@ object perceptron
 		val regValue:Double = 0.0, 
 		val threshold:Double=1e-7, 
 		val maxIterations:Int=1000)
-	extends BatchClassifier[Boolean]
+	extends BatchClassifier[Int,Boolean]
 	{
 		//define the weights with a bias term at the end
 		val weights = new Array[Double](dimension+1)
@@ -29,7 +29,7 @@ object perceptron
 		/**
 		Train the model
 		*/
-		def batchTrain(examples:Iterable[LabeledInstance[Boolean]]):Boolean =
+		def batchTrain(examples:Iterable[LabeledDenseInstance[Boolean]]):Boolean =
 		{
 			var delta = new Array[Double](dimension+1)
 			var i = 0
@@ -57,7 +57,7 @@ object perceptron
 						val direction = if(example.label) 1.0 else -1.0
 
 						//add to the delta
-						for((feat,j) <- iterWithBias(example, bias))
+						for((j,feat) <- iterWithBias(example, bias))
 						{
 							delta(j) += feat * direction
 						}
@@ -94,7 +94,7 @@ object perceptron
 		/**
 		Classify an instance	
 		*/
-		def classify(instance:Instance):Boolean =
+		def classify(instance:DenseInstance):Boolean =
 		{
 			//if the product is positive then the prediction is true
 			dotProduct(instance, weights) > 0.0
@@ -111,7 +111,7 @@ object perceptron
 	class OnlineBinaryPerceptron(val dimension:Int, 
 		val learningRate:Double=.1,
 		val regValue:Double=0.0)
-	extends OnlineClassifier[Boolean]
+	extends OnlineClassifier[Int,Boolean]
 	{
 		//define the weights with a bias term at the end
 		val weights = new Array[Double](dimension+1)
@@ -122,7 +122,7 @@ object perceptron
 		/**
 		Update the model
 		*/
-		def onlineTrain(example:LabeledInstance[Boolean])
+		def onlineTrain(example:LabeledDenseInstance[Boolean])
 		{
 			//if the predicted label doesn't match the output update the weights
 			if(trainingClassify(example) != example.label)
@@ -130,7 +130,7 @@ object perceptron
 				val direction = if(example.label) 1.0 else -1.0
 				
 				//add to the delta
-				for((feat,j) <- iterWithBias(example, bias))
+				for((j,feat) <- iterWithBias(example, bias))
 				{
 					val delta = feat * direction * learningRate - (learningRate * weights(j) * regValue)
 					weights(j) += delta
@@ -143,7 +143,7 @@ object perceptron
 		/**
 		Classify an instance	while training
 		*/
-		def trainingClassify(instance:Instance):Boolean =
+		def trainingClassify(instance:DenseInstance):Boolean =
 		{
 			//if the product is positive then the prediction is true
 			dotProduct(instance, weights) > 0.0
@@ -160,7 +160,7 @@ object perceptron
 		/**
 		Predict label
 		*/
-		def classify(instance:Instance):Boolean =
+		def classify(instance:DenseInstance):Boolean =
 		{
 			//do classification with the averaged weights
 			dotProduct(instance, finalWeights) > 0.0
@@ -177,7 +177,7 @@ object perceptron
 	class OnlinePerceptron[C](val dimension:Int, val classDomain:Set[C],
 		val learningRate:Double=.1,
 		val regValue:Double=0.0)
-	extends OnlineClassifier[C]
+	extends OnlineClassifier[Int,C]
 	{
 		//define the weights with a bias term at the end
 		val weights = domain.map(d => (d,new Array[Double](dimension+1))).toMap
@@ -188,7 +188,7 @@ object perceptron
 		/**
 		Update the model
 		*/
-		def onlineTrain(example:LabeledInstance[C])
+		def onlineTrain(example:LabeledDenseInstance[C])
 		{
 			val predicted = trainingClassify(example)
 			val answer = example.label
@@ -202,7 +202,7 @@ object perceptron
 				val avgAns = avgWeights(answer)
 
 				//add to the delta
-				for((feat,j) <- iterWithBias(example, bias))
+				for((j,feat) <- iterWithBias(example, bias))
 				{
 					val predDelta = (feat + predWeight(j) * regValue) * learningRate 
 					val ansDelta = (feat - ansWeight(j) * regValue) * learningRate
@@ -219,7 +219,7 @@ object perceptron
 		/**
 		Classify an instance	while training
 		*/
-		def trainingClassify(instance:Instance):C =
+		def trainingClassify(instance:DenseInstance):C =
 		{
 			//if the product is positive then the prediction is true
 			domain.maxBy(d => dotProduct(instance, weights(d)))
@@ -236,7 +236,7 @@ object perceptron
 		/**
 		Predict label
 		*/
-		def classify(instance:Instance):C =
+		def classify(instance:DenseInstance):C =
 		{
 			//do classification with the averaged weights
 			domain.maxBy(d => dotProduct(instance, finalWeights(d)))
@@ -259,16 +259,16 @@ object perceptron
 	/**
 	Iterate through the features of an instance with a bias term added
 	*/
-	def iterWithBias(instance:Instance, biasIndex:Int):Iterable[(Double, Int)] =
+	def iterWithBias(instance:DenseInstance, biasIndex:Int):Iterable[(Int, Double)] =
 	{
-		instance.featuresWithIndex ++ Seq( (1.0, biasIndex) )
+		instance.featuresWithKey ++ Seq( (biasIndex, 1.0) )
 	}
 
 	/**
 	Computes the dot product between the instance features and
 	the weights
 	*/
-	def dotProduct(instance:Instance, weights:Array[Double]):Double =
+	def dotProduct(instance:DenseInstance, weights:Array[Double]):Double =
 	{
 		instance.features.zip(weights).map(p => p._1 * p._2).sum + weights.last
 	}

@@ -1,4 +1,4 @@
-package sml.text
+package sml.test
 
 import org.scalatest._
 
@@ -69,7 +69,7 @@ object perceptron
 			
 			multiClassData.foreach(d => online.onlineTrain(d))
 
-			multiClassData.foreach(d => println(s"$d ${online.classify(d)}"))
+			//multiClassData.foreach(d => println(s"$d ${online.classify(d)}"))
 
 			multiClassData.count(d => online.classify(d) == d.label) should be (multiClassData.size - 3)
 		}

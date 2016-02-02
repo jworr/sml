@@ -1,6 +1,7 @@
 package sml
 
 import scala.collection.mutable.HashMap
+import scala.math.log
 
 /**
 Contains general untility functions
@@ -11,6 +12,11 @@ object util
 	Generates and returns a time based UUID
 	*/
 	def UUID:String = java.util.UUID.randomUUID.toString
+
+	/**
+	 * Computes log base 2
+	 */
+	def log2(n:Double):Double = log(n) / log(2)
 
 	/**
 	 * A datastructure to count the number of occurances of an object i.e. a
