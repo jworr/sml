@@ -1,5 +1,7 @@
 package sml
 
+import scala.collection.{GenIterable, GenMap}
+
 import sml.learn._
 import sml.util.{Counter, log2}
 
@@ -11,7 +13,8 @@ object dtree
 	/**
 	 * A class that represents and trains a decision tree classifier
 	 */
-	class DecisionTree[K,C](val maxDepth:Int, val domain:Set[C], val featureDomain:Iterable[K], val splitDomain:K=>Iterable[Double]=null) extends BatchClassifier[K,C]
+	class DecisionTree[K,C](val maxDepth:Int, val domain:Set[C], val featureDomain:GenIterable[K], val splitDomain:K=>Iterable[Double]=null) 
+		extends BatchClassifier[K,C]
 	{
 		var root:Node = null
 
@@ -36,7 +39,7 @@ object dtree
 				//check if there is a single class in the example
 				if( examples.forall(e => e.label == examples.head.label) )
 				{
-					Leaf(examples.head.label)
+					Leaf(examples.head.label, 1.0)
 				}
 				else
 				{
@@ -62,11 +65,11 @@ object dtree
 		/**
 		 * Finds the best node to split the data
 		 */
-		def findSplit(examples:Iterable[LabeledInstance[K,C]], splitPoints:K=>Iterable[Double])
+		def findSplit(examples:Iterable[LabeledInstance[K,C]], splitPoints:K=>GenIterable[Double])
 		:(SplitPredicate[K], Iterable[LabeledInstance[K,C]], Iterable[LabeledInstance[K,C]]) =
 		{
 			//find all the splits
-			val splits = for(pred <- featureDomain.flatMap(k => splitPoints(k).map(f => SplitPredicate(k, f)))) yield
+			val splits = for(pred <- featureDomain.par.flatMap(k => splitPoints(k).map(f => SplitPredicate(k, f)))) yield
 			{
 				val (left, right) = pred.split(examples)
 
@@ -97,7 +100,9 @@ object dtree
 		 */
 		def makeLeaf(examples:Iterable[LabeledInstance[K,C]]):Leaf[C] =
 		{
-			Leaf(Counter(examples.map(_.label)).counts.maxBy(_._2)._1)
+			val totals = Counter(examples.map(_.label)).counts
+			val top = totals.maxBy(_._2)
+			Leaf(top._1, top._2.toDouble/totals.map(_._2).sum)
 		}
 
 		/**
@@ -105,17 +110,43 @@ object dtree
 		 */
 		def classify(example:Instance[K]):C =
 		{
-			classifyHelper(example, root)
+			classifyHelper(example, root).choice
+		}
+
+		/**
+		 * Returns the confidence about the example
+		 */
+		def classifyWithConfidence(example:Instance[K]):(C, Double) =
+		{
+			val node = classifyHelper(example, root)
+
+			(node.choice, node.proportion)
 		}
 
 		/**
 		 * Recurses through the tree until a final decision is reached
 		 */
-		def classifyHelper(example:Instance[K], current:Node):C = current match
+		def classifyHelper(example:Instance[K], current:Node):Leaf[C] = current match
 		{
 			case d:DecisionNode[K] => classifyHelper(example, d.nextNode(example))
-			case l:Leaf[C] => l.choice
+			case l:Leaf[C] => l
 		}
+
+		def allNodes:Iterable[Node] =
+		{
+			def helper(node:Node):Iterable[Node] = node match
+			{
+				case d:DecisionNode[K] => Seq(d) ++ helper(d.left) ++ helper(d.right)
+				case l:Leaf[C] => Seq(l)
+			}
+
+			helper(root)
+		}
+
+		/**
+		 * Does a non-trival computation of the number of nodes in the tree
+		 */
+		def size:Int = allNodes.size
 
 		override def toString:String =
 		{
@@ -126,7 +157,7 @@ object dtree
 	/**
 	 * Returns a mapping of all the splits
 	 */
-	def allSplits[K,C](featureDomain:Iterable[K], data:Iterable[LabeledInstance[K,C]]):Map[K,Iterable[Double]] =
+	def allSplits[K,C](featureDomain:GenIterable[K], data:Iterable[LabeledInstance[K,C]]):Map[K,Iterable[Double]] =
 	{
 		//for each dimension compute all the possible splits
 		val splits = for(key <- featureDomain) yield
@@ -136,7 +167,7 @@ object dtree
 			(key, points)
 		}
 
-		splits.toMap
+		splits.toMap.seq.toMap
 	}
 
 	/**
@@ -210,7 +241,7 @@ object dtree
 	/**
 	 * A leaf node 
 	 */
-	case class Leaf[C](val choice:C) extends Node
+	case class Leaf[C](val choice:C, val proportion:Double) extends Node
 	{
 		override def toString:String =
 		{
