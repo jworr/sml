@@ -73,10 +73,14 @@ object dtree
 			{
 				val (left, right) = pred.split(examples)
 
-				(pred, left, right)
+				(pred, splitEntropy(left, right))
 			}
 
-			splits.minBy(t => splitEntropy(t._2, t._3))
+			val top = splits.minBy(_._2)._1
+
+			val (left, right) = top.split(examples)
+
+			(top, left, right)
 		}
 
 		/**
