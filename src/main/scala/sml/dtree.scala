@@ -43,6 +43,9 @@ object dtree
 				}
 				else
 				{
+					//TODO remove
+					println(s"depth $depth")
+
 					//find the best split
 					val(pred, left, right) = findSplit(examples, splits)
 
@@ -73,6 +76,8 @@ object dtree
 			{
 				val (left, right) = pred.split(examples)
 
+				println(s"pred: $pred, ${splitEntropy(left, right)}")
+
 				(pred, splitEntropy(left, right))
 			}
 
@@ -88,7 +93,8 @@ object dtree
 		 */
 		def splitEntropy(left:Iterable[LabeledInstance[K,C]], right:Iterable[LabeledInstance[K,C]]):Double =
 		{
-			setEntropy(left) + setEntropy(right)
+			val denom = (left.size + right.size).toDouble
+			((left.size/denom) * setEntropy(left)) + ((right.size/denom) * setEntropy(right))
 		}
 
 		/**
