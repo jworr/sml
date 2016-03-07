@@ -87,6 +87,46 @@ package object nlp
 		def tokens:Seq[Token] = sentences.map(_.tokens).flatten
 
 		/**
+		 * Determines the lexical distance between two phrases
+		 */
+		def lexicalDistance(phrase:Seq[Token], other:Seq[Token]):Int =
+		{
+			//check if the phrases overlap
+			if(!phrase.overlaps(other))
+			{
+				//determine the order of the phrases
+				val ordered = Seq(phrase, other).sorted
+				val first = ordered.head
+				val second = ordered.last
+
+				//if the two phrases are in the same sentence then do a simple computation
+				if(phrase.shareSentence(other))
+				{
+					second.head.id - first.last.id
+				}
+				else
+				{
+					//the distance from the end of the first phrase to the end of 
+					//its sentence
+					val firstDist = sentenceByToken(first.last).size - first.last.id
+
+					//the distance from the beginning of the second phrase to the
+					//start of its sentence
+					val secondDist = second.head.id
+
+					//sum all the tokens of all the sentences in between
+					val betweenDist = Range(first.last.sentenceId+1, second.head.sentenceId).map(i => sentenceById(i).size).sum
+
+					firstDist + secondDist + betweenDist
+				}
+			}
+			else
+			{
+				0
+			}
+		}
+
+		/**
 		Returns the syntatic head of the span - the highest according to the
 		parse tree
 		*/
@@ -372,6 +412,8 @@ package object nlp
 
 		def isPronoun = pos.startsWith("PR")
 
+		def isPunctuation = PUNCTUATION.contains(pos)
+
 		def simplePOS:String =
 		{
 			if(isVerb) "VERB"
@@ -380,6 +422,7 @@ package object nlp
 			else if(isAdj) "ADJECTIVE"
 			else if(isAdv) "ADVERB"
 			else if(isPronoun) "PRONOUN"
+			else if(isPunctuation) "PUNCTUATION"
 			else "OTHER"
 		}
 
@@ -431,6 +474,44 @@ package object nlp
 		Use the word as the token string
 		*/
 		override def toString = this.word.trim
+	}
+
+	/**
+	 * An implicit class for sequences of tokens, aka phrases
+	 */
+	implicit class Phrase(val tokens:Seq[Token]) extends Ordered[Seq[Token]]
+	{
+		/**
+		 * Returns true if the two phrases overlap
+		 */
+		def overlaps(other:Seq[Token]):Boolean =
+		{
+			tokens.toSet.intersect(other.toSet).nonEmpty
+		}
+
+		/**
+		 * Returns true if the phrases are in the same sentence
+		 */
+		def shareSentence(other:Seq[Token]):Boolean =
+		{
+			tokens.map(_.sentenceId).toSet.intersect(other.map(_.sentenceId).toSet).nonEmpty
+		}
+
+		/**
+		 * Compares two phrases
+		 */
+		def compare(other:Seq[Token]):Int =
+		{
+			val sentCmp = tokens.map(_.sentenceId).min.compare(other.map(_.sentenceId).min)
+
+			//first compare sentence ids, if there is a tie then go to tokens
+			if(sentCmp == 0)
+			{
+				tokens.map(_.id).min.compare(other.map(_.id).min)
+			}
+			else
+				sentCmp
+		}
 	}
 
 	/**
@@ -619,6 +700,8 @@ package object nlp
 	"LS", "MD", "NN",	"NNS", "NNP", "NNPS", "PDT", "POS", "PRP", "PRP$", "RB", 
 	"RBR", "RBS", "RP", "SYM", "TO", "UH", "VB", "VBD", "VBG", "VBN", "VBP", 
 	"VBZ", "WDT", "WP", "WP$", "WRB")
+
+	val PUNCTUATION = Set(".", ",", ":")
 
 	val blackList = Set("'s", "-LRB-", "-RRB-", "-LSB-", "-RSB-")
 
