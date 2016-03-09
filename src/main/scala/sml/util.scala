@@ -19,6 +19,17 @@ object util
 	def log2(n:Double):Double = log(n) / log(2)
 
 	/**
+	 * Computes the average
+	 */
+	def average[T](items:Iterable[T])(implicit toNum:Numeric[T]):Double =
+	{
+		if(items.nonEmpty)
+			toNum.toDouble(items.sum) / items.size
+		else
+			0.0
+	}
+
+	/**
 	 * A datastructure to count the number of occurances of an object i.e. a
 	 * multiset
 	 */

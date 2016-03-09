@@ -84,7 +84,7 @@ package object nlp
 		/**
 		Returns all the tokens
 		*/
-		def tokens:Seq[Token] = sentences.map(_.tokens).flatten
+		def tokens:Seq[Token] = sentences.flatMap(_.tokens)
 
 		/**
 		 * Determines the lexical distance between two phrases

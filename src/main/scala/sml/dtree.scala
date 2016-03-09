@@ -43,9 +43,6 @@ object dtree
 				}
 				else
 				{
-					//TODO remove
-					println(s"depth $depth")
-
 					//find the best split
 					val(pred, left, right) = findSplit(examples, splits)
 
@@ -75,8 +72,6 @@ object dtree
 			val splits = for(pred <- featureDomain.par.flatMap(k => splitPoints(k).map(f => SplitPredicate(k, f)))) yield
 			{
 				val (left, right) = pred.split(examples)
-
-				println(s"pred: $pred, ${splitEntropy(left, right)}")
 
 				(pred, splitEntropy(left, right))
 			}
