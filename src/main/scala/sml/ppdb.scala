@@ -122,27 +122,17 @@ object ppdb
 	}
 
 	/**
-	Defines a traverser over PPDB
-	*/
-	abstract class Traverser(val db:Connection, val start:String) extends Iterable[PPDBNode]
+	 * A traversal of PPDB from a starting point
+	 */
+	case class PPDBTraversal(val traverser:Traverser, val start:String) extends Iterable[PPDBNode]
 	{
-		/**
-		Wraps a paraphrase in a node
-		*/
-		implicit def init( phrase:String ): PPDBNode
-		
-		/**
-		Returns a nodes successors
-		*/
-		def successors(node:PPDBNode):Iterable[PPDBNode]
-
 		/**
 		Returns an iterator over phrase
 		*/
 		def iterator = new Iterator[PPDBNode]
 		{
 			val visited = new HashSet[PPDBNode]()
-			val fringe = new Queue[PPDBNode]() ++ List[PPDBNode](start)
+			val fringe = new Queue[PPDBNode]() ++ List[PPDBNode](traverser.init(start))
 
 			override def hasNext:Boolean = !fringe.isEmpty
 		
@@ -155,7 +145,7 @@ object ppdb
 				visited += current
 
 				//add its children to the fringe
-				fringe ++= (successors(current).filter(n => !visited(n)))
+				fringe ++= (traverser.successors(current).filter(n => !visited(n)))
 			
 				//return the current value
 				return current
@@ -164,11 +154,35 @@ object ppdb
 	}
 
 	/**
+	Defines a traverser over PPDB
+	*/
+	abstract class Traverser(val db:Connection)
+	{
+		/**
+		Wraps a paraphrase in a node
+		*/
+		def init( phrase:String ): PPDBNode
+		
+		/**
+		Returns a nodes successors
+		*/
+		def successors(node:PPDBNode):Iterable[PPDBNode]
+
+		/**
+		 * Returns the neighbors of the given node
+		 */
+		def neighbors(start:String):Iterable[PPDBNode] =
+		{
+			PPDBTraversal(this,start)
+		}	
+	}
+
+	/**
 	Traverses PPDB based on distance from the starting point
 	*/
-	case class DistTraverser(startNode:String, val limit:Int, conn:Connection) extends Traverser(conn, startNode)
+	case class DistTraverser(val limit:Int, conn:Connection) extends Traverser(conn)
 	{
-		implicit def init(phrase:String) = new PPDBNode(phrase,0.0,syntaticRules(conn, phrase))
+		def init(phrase:String) = new PPDBNode(phrase,0.0,syntaticRules(conn, phrase))
 
 		/**
 		Returns all nodes one step away from the current node
@@ -188,9 +202,9 @@ object ppdb
 	/**
 	Traverses PPDB based on similarity
 	*/
-	case class SimTraverser(startNode:String, val limit:Double, conn:Connection) extends Traverser(conn, startNode)
+	case class SimTraverser(val limit:Double, conn:Connection) extends Traverser(conn)
 	{
-		implicit def init(phrase:String) = new PPDBNode(phrase, 1.0, syntaticRules(conn, phrase))
+		def init(phrase:String) = new PPDBNode(phrase, 1.0, syntaticRules(conn, phrase))
 
 		/**
 		Returns all nodes that are within a similarity threshold of the the start
@@ -201,15 +215,12 @@ object ppdb
 		}
 	}
 
-	def distTraverse(limit:Int, db:Connection)(start:String):Iterable[PPDBNode] = DistTraverser(start,limit,db).toSeq
-
-	def simTraverse(limit:Double, db:Connection)(start:String):Iterable[PPDBNode] = SimTraverser(start,limit,db).toSeq
-
 	def main(args:Array[String])
 	{
 		val db = connect("/home/walker/Data/ppdb/small_no_num.db")
+		val trav = DistTraverser(5, db)
 
-		for( result <- distTraverse(5, db)("arrested") )
+		for( result <- trav.neighbors("arrested") )
 		{
 			println(result)
 		}
