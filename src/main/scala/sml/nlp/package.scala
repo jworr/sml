@@ -242,13 +242,9 @@ package object nlp
 		def depType(token:Token): String =
 		{
 			if(hasDepType(token))
-			{
 				dependencies(token.id)._1
-			}
 			else
-			{
 				null
-			}
 		}
 
 		/**
@@ -291,7 +287,23 @@ package object nlp
 					return helper(parent(current), current :: partial)
 			}
 
-			return helper(token, List())
+			helper(token, List())
+		}
+
+		/**
+		 * Returns all the descendents
+		 */
+		def descendants(token:Token):Iterable[Token] =
+		{
+			def helper(current:Token):Set[Token] = 
+			{
+				val kids = children(current)
+
+				//include the current token's children and the children's children
+				kids.toSet ++ kids.flatMap(c => helper(c)).toSet
+			}
+
+			helper(token)
 		}
 
 		/**

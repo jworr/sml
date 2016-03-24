@@ -175,6 +175,51 @@ object nlp
 			sent1.commonAncestor(token1, token3).isEmpty should be (true)
 			sent2.commonAncestor(token1, token3).isEmpty should be (true)
 		}
+
+		it should "find children of non-leaf token" in
+		{
+			val sent = testDoc.sentenceById(2)
+			val token = sent.tokenById(2)
+
+			sent.children(token).toSet should be (pickTokens(sent, Seq(1,4)))
+		}
+
+		it should "find no children of leaf token" in
+		{
+			val sent = testDoc.sentenceById(2)
+			val token = sent.tokenById(3)
+
+			sent.children(token).toSet should be (Set())
+		}
+
+		it should "find all the descenants of a non-leaf token" in
+		{
+			val sent = testDoc.sentenceById(2)
+			val token = sent.tokenById(2)
+			sent.descendants(token) should be (pickTokens(sent, Seq(1,3,4)))
+		}
+
+		it should "find no descendants for a leaf token" in
+		{
+			val sent = testDoc.sentenceById(2)
+			val token = sent.tokenById(3)
+
+			println(s"problem token: '$token'")
+
+			sent.descendants(token) should be (Set())
+		}
+
+		it should "find no descendants for a punctuation token" in
+		{
+			val sent = testDoc.sentenceById(2)
+			val token = sent.tokenById(5)
+			sent.descendants(token) should be (Set())
+		}
+	}
+
+	def pickTokens(sentence:Sentence, tokenIds:Iterable[Int]):Set[Token] =
+	{
+		tokenIds.map(i => sentence.tokenById(i)).toSet
 	}
 	
 	val rawText = "This is a test. I hope it works."
