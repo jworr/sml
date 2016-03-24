@@ -190,7 +190,7 @@ package object nlp
 		//map of token to dependency type, governor
 		val dependencies = edges.map( kv => (kv._1._2, (kv._2, kv._1._1)) ).toMap
 
-		val chunks:Seq[Chunk] = chunkSentence(this)
+		lazy val chunks:Seq[Chunk] = chunkSentence(this)
 
 		def tokens: Seq[Token] = tokMap.values.toSeq
 
@@ -299,13 +299,21 @@ package object nlp
 		*/
 		def commonAncestor(one:Token, another:Token):Option[Token] =
 		{
-			val prefix = ancestors(one).zip(ancestors(another)).takeWhile(p => p._1 == p._2)
+			//make sure the two tokens are in the same sentence
+			if(one.sentenceId == another.sentenceId)
+			{
+				val prefix = ancestors(one).zip(ancestors(another)).takeWhile(p => p._1 == p._2)
 
-			//make sure there is a prefix
-			if(prefix.isEmpty)
-				None
+				//make sure there is a prefix
+				if(prefix.isEmpty)
+					None
+				else
+					Some(prefix.last._1)
+			}
 			else
-				Some(prefix.last._1)
+			{
+				None
+			}
 		}
 
 		/**
@@ -495,6 +503,35 @@ package object nlp
 		def shareSentence(other:Seq[Token]):Boolean =
 		{
 			tokens.map(_.sentenceId).toSet.intersect(other.map(_.sentenceId).toSet).nonEmpty
+		}
+
+		/**
+		 * Returns true if of one of the tokens is in a dependency tree
+		 */
+		def inDepTree(implicit doc:Document):Boolean =
+		{
+			tokens.exists(t => doc.sentenceByToken(t).hasDepType(t))
+		}
+
+		/**
+		 * Returns the syntatic head of the phrase, assuming all the tokens
+		 * are in the same sentence
+		 */
+		def syntaticHead(implicit doc:Document):Token =
+		{
+			//determine the sentence of the span
+			val sent = doc.sentenceByToken(tokens.head)
+
+			//find the highest token in the tree
+			tokens.minBy(m => sent.depth(m))
+		}
+
+		/**
+		 * Returns true if the two phrases have a dependency relationship
+		 */
+		def hasDepRelationship(other:Seq[Token], doc:Document):Boolean =
+		{
+			shareSentence(other) && inDepTree(doc) && other.inDepTree(doc)
 		}
 
 		/**
