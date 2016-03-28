@@ -250,16 +250,14 @@ package object nlp
 		/**
 		Returns the parent of the token
 		*/
-		def parent(token:Token):Token =
+		def parent(token:Token):Option[Token] =
 		{
 			if(dependencies.contains(token.id))
 			{
-				tokMap.getOrElse(dependencies(token.id)._2, null)
+				tokMap.get(dependencies(token.id)._2)
 			}
 			else
-			{
-				null
-			}
+				None	
 		}
 
 		/**
@@ -281,10 +279,16 @@ package object nlp
 		{
 			def helper(current:Token, partial:List[Token]):List[Token] =
 			{
-				if(current == null)
-					return partial
+				val parentTok = parent(current)
+				val next = current :: partial 
+
+				//if there is no parent then stop
+				if(parentTok.isEmpty)
+					next
+				
+				//else recurse up
 				else
-					return helper(parent(current), current :: partial)
+					helper(parentTok.get, next)
 			}
 
 			helper(token, List())
