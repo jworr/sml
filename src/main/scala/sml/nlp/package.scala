@@ -355,6 +355,11 @@ package object nlp
 		*/
 		def minTokenId: Int = 1
 
+		/**
+		 * Returns true if all the token ids are in the sentence
+		 */
+		def validIds(tokenIds:Range):Boolean = tokenIds.forall(i => minTokenId <= i && i <= maxTokenId)
+		
 		def hasDepType(token:Token):Boolean = token.sentenceId == id && dependencies.contains(token.id)
 
 		def hasDepType(token: Token, dep: String): Boolean = depType(token) == dep
