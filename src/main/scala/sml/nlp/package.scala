@@ -5,7 +5,7 @@ import scala.xml.XML.{loadFile, loadString}
 import scala.collection.immutable.TreeMap
 import scala.collection.mutable.HashMap
 import scala.collection.Map
-import scala.math.{min,max}
+import scala.math.{min,max,abs}
 
 import sml.io.{baseName,ls,join,removeSuffix}
 import sml.nlp.chunker.{Chunk, chunkSentence}
@@ -203,8 +203,7 @@ package object nlp
 		*/
 		def tokensWithType(depType: String): Iterable[Token] =
 		{
-			//get edges with the correct type, then get the end vertex of the edge, then look up the Token
-			dependencies.filter(kv => kv._2._1 == depType).map( kv => kv._1 ).map(tokMap)
+			tokens.filter(t => hasDepType(t, depType))
 		}
 
 		/**
@@ -239,12 +238,12 @@ package object nlp
 		/**
 		Returns the dependency type for the token
 		*/
-		def depType(token:Token): String =
+		def depType(token:Token):Option[String] =
 		{
 			if(hasDepType(token))
-				dependencies(token.id)._1
+				Some(dependencies(token.id)._1)
 			else
-				null
+				None
 		}
 
 		/**
@@ -253,9 +252,7 @@ package object nlp
 		def parent(token:Token):Option[Token] =
 		{
 			if(dependencies.contains(token.id))
-			{
 				tokMap.get(dependencies(token.id)._2)
-			}
 			else
 				None	
 		}
@@ -317,18 +314,64 @@ package object nlp
 		{
 			//make sure the two tokens are in the same sentence
 			if(one.sentenceId == another.sentenceId)
-			{
-				val prefix = ancestors(one).zip(ancestors(another)).takeWhile(p => p._1 == p._2)
+				commonAncestor(ancestors(one), ancestors(another))
+			else
+				None
+		}
 
-				//make sure there is a prefix
-				if(prefix.isEmpty)
-					None
-				else
-					Some(prefix.last._1)
+		def commonAncestor(one:Seq[Token], another:Seq[Token]):Option[Token] =
+		{
+			val prefix = one.zip(another).takeWhile(p => p._1 == p._2)
+
+			//make sure there is a prefix
+			if(prefix.isEmpty)
+				None
+			else
+				Some(prefix.last._1)
+		}
+
+		/**
+		 * Returns the nearsest token with the given type
+		 */
+		def nearestTokenWithType(seed:Token, searchType:String):Option[Token] =
+		{
+			val candidates = tokensWithType(searchType).filter(t => t != seed).map(c => (c, syntaticDistance(seed,c))).filter(_._2.nonEmpty)
+
+			//if there are any candidates find the closest one
+			if(candidates.nonEmpty)
+				Some(candidates.minBy(_._2)._1)
+			else
+				None
+		}
+		
+		/**
+		 * Returns the number of tokens in the parse tree between the two
+		 * tokens
+		 */
+		def syntaticDistance(token:Token, other:Token):Option[Int] =
+		{
+			val firstAn = ancestors(token)
+			val secondAn = ancestors(other)
+
+			//if either one is an ancestor of the other then compare their depth
+			if(firstAn.contains(other) || secondAn.contains(token))
+			{
+				Some(abs(depth(token) - depth(other)))
 			}
 			else
 			{
-				None
+				val common = commonAncestor(firstAn, secondAn)
+
+				//if there is a common ancestor measure the distance to it from
+				//both tokens
+				if(common.nonEmpty)
+				{
+					val commonDepth = depth(common.get)
+
+					Some((depth(token) - commonDepth) + (depth(other) - commonDepth))
+				}
+				else
+					None
 			}
 		}
 
@@ -362,17 +405,17 @@ package object nlp
 		
 		def hasDepType(token:Token):Boolean = token.sentenceId == id && dependencies.contains(token.id)
 
-		def hasDepType(token: Token, dep: String): Boolean = depType(token) == dep
+		def hasDepType(token: Token, dep: String): Boolean = depType(token).getOrElse("").contains(dep)
 
-		def isSubject( token: Token ): Boolean = hasDepType(token, "subj")
+		def isSubject( token: Token ): Boolean = hasDepType(token, GENERIC_SUBJECT)
 
-		def isObject( token: Token ): Boolean = hasDepType(token, "obj")
+		def isObject( token: Token ): Boolean = hasDepType(token, GENERIC_OBJECT)
 		
-		def isAux( token: Token ): Boolean = hasDepType(token, "aux")
+		def isAux( token: Token ): Boolean = hasDepType(token, GENERIC_AUX)
 
-		def objects: Iterable[Token] = tokensWithType("obj")
+		def objects: Iterable[Token] = tokensWithType(GENERIC_OBJECT)
 
-		def subjects: Iterable[Token] = tokensWithType("subj")
+		def subjects: Iterable[Token] = tokensWithType(GENERIC_SUBJECT)
 
 		def size: Int = tokens.size
 
@@ -759,6 +802,10 @@ package object nlp
 	"RBR", "RBS", "RP", "SYM", "TO", "UH", "VB", "VBD", "VBG", "VBN", "VBP", 
 	"VBZ", "WDT", "WP", "WP$", "WRB")
 
+	val GENERIC_SUBJECT = "subj"
+	val GENERIC_OBJECT = "obj"
+	val GENERIC_AUX = "aux"
+
 	val PUNCTUATION = Set(".", ",", ":")
 
 	val blackList = Set("'s", "-LRB-", "-RRB-", "-LSB-", "-RSB-")
@@ -788,6 +835,6 @@ package object nlp
 		for( group <- doc.corefGroups )
 		{
 			println(group)
-		}
+group		}
 	}
 }
