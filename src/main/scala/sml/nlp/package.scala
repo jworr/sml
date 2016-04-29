@@ -343,7 +343,17 @@ package object nlp
 			else
 				None
 		}
-		
+	
+		/**
+		 * Returns the nearest subject to the token
+		 */
+		def nearestSubject(seed:Token):Option[Token] = nearestTokenWithType(seed, GENERIC_SUBJECT)
+
+		/**
+		 * Returns the nearest object to the token
+		 */
+		def nearestObject(seed:Token):Option[Token] = nearestTokenWithType(seed, GENERIC_OBJECT)
+
 		/**
 		 * Returns the number of tokens in the parse tree between the two
 		 * tokens
@@ -805,6 +815,7 @@ package object nlp
 	val GENERIC_SUBJECT = "subj"
 	val GENERIC_OBJECT = "obj"
 	val GENERIC_AUX = "aux"
+	val GOVERNOR = "gov"
 
 	val PUNCTUATION = Set(".", ",", ":")
 
