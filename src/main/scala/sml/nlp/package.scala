@@ -572,6 +572,14 @@ package object nlp
 		}
 
 		/**
+		 * Returns a Range that covers the ids of the Phrase's tokens
+		 */
+		def toRange:Range =
+		{
+			Range(tokens.head.id, tokens.last.id+1)
+		}
+
+		/**
 		 * Returns true if the phrases are in the same sentence
 		 */
 		def shareSentence(other:Seq[Token]):Boolean =
