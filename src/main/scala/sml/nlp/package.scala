@@ -496,6 +496,8 @@ package object nlp
 
 		def isPunctuation = PUNCTUATION.contains(pos)
 
+		def isBlackListed = blackList.contains(word)
+
 		def simplePOS:String =
 		{
 			if(isVerb) "VERB"
@@ -513,7 +515,7 @@ package object nlp
 		 */
 		def alphaNum:Boolean = 
 		{
-			if(!blackList.contains(word))
+			if(!isBlackListed)
 				word.exists(c => c.isLetterOrDigit)
 			else
 				false
@@ -854,6 +856,6 @@ package object nlp
 		for( group <- doc.corefGroups )
 		{
 			println(group)
-group		}
+		}
 	}
 }
