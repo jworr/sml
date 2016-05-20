@@ -1,12 +1,9 @@
 package sml
 
 import java.sql.Connection
-import scala.collection.mutable.{HashSet, Queue}
 
+import sml.knowledge.{Traverser, Node, TraverserImpl}
 import sml.sqlite.{iterableResults, prepareAndQuery}
-
-//for testing
-import sml.sqlite.connect
 
 /**
 A library for accessing the paraphrase database
@@ -16,7 +13,7 @@ object ppdb
 	/**
 	Returns true if the phrase is in the database
 	*/
-	def hasPhrase(db:Connection)(phrase:String): Boolean =
+	def phraseInDB(db:Connection)(phrase:String): Boolean =
 	{
 		val sql = "select count(*) from similarity where source = ?"
 
@@ -110,79 +107,24 @@ object ppdb
 	/**
 	A phrase in PPDB
 	*/
-	class PPDBNode(val phrase:String, val score:Double, val synRules:Set[String])
-	{
-		override def equals(other:Any): Boolean = other match
-		{
-			case that:PPDBNode => that.phrase == phrase
-			case _ => false
-		}
-		
-		override def hashCode:Int = phrase.hashCode
-	}
-
-	/**
-	 * A traversal of PPDB from a starting point
-	 */
-	case class PPDBTraversal(val traverser:Traverser, val start:String) extends Iterable[PPDBNode]
-	{
-		/**
-		Returns an iterator over phrase
-		*/
-		def iterator = new Iterator[PPDBNode]
-		{
-			val visited = new HashSet[PPDBNode]()
-			val fringe = new Queue[PPDBNode]() ++ List[PPDBNode](traverser.init(start))
-
-			override def hasNext:Boolean = !fringe.isEmpty
-		
-			override def next:PPDBNode = 
-			{
-				//get the current
-				val current = fringe.dequeue
-
-				//mark it as visited
-				visited += current
-
-				//add its children to the fringe
-				fringe ++= (traverser.successors(current).filter(n => !visited(n)))
-			
-				//return the current value
-				return current
-			}
-		}
-	}
-
+	class PPDBNode(phrase:String, score:Double, val synRules:Set[String]) 
+		extends Node(phrase, score)
+	
 	/**
 	Defines a traverser over PPDB
 	*/
-	abstract class Traverser(val db:Connection)
+	abstract class PPDBTraverser(val db:Connection) 
+		extends TraverserImpl[PPDBNode]
 	{
-		/**
-		Wraps a paraphrase in a node
-		*/
-		def init( phrase:String ): PPDBNode
-		
-		/**
-		Returns a nodes successors
-		*/
-		def successors(node:PPDBNode):Iterable[PPDBNode]
-
-		/**
-		 * Returns the neighbors of the given node
-		 */
-		def neighbors(start:String):Iterable[PPDBNode] =
-		{
-			PPDBTraversal(this,start)
-		}	
+		def hasPhrase(phrase:String):Boolean = phraseInDB(db)(phrase)
 	}
 
 	/**
 	Traverses PPDB based on distance from the starting point
 	*/
-	case class DistTraverser(val limit:Int, conn:Connection) extends Traverser(conn)
+	case class DistTraverser(val limit:Int, conn:Connection) extends PPDBTraverser(conn)
 	{
-		def init(phrase:String) = new PPDBNode(phrase,0.0,syntaticRules(conn, phrase))
+		def init(phrase:String) = Seq(new PPDBNode(phrase,0.0,syntaticRules(conn, phrase)))
 
 		/**
 		Returns all nodes one step away from the current node
@@ -202,9 +144,9 @@ object ppdb
 	/**
 	Traverses PPDB based on similarity
 	*/
-	case class SimTraverser(val limit:Double, conn:Connection) extends Traverser(conn)
+	case class SimTraverser(val limit:Double, conn:Connection) extends PPDBTraverser(conn)
 	{
-		def init(phrase:String) = new PPDBNode(phrase, 1.0, syntaticRules(conn, phrase))
+		def init(phrase:String) = Seq(new PPDBNode(phrase, 1.0, syntaticRules(conn, phrase)))
 
 		/**
 		Returns all nodes that are within a similarity threshold of the the start
@@ -212,17 +154,6 @@ object ppdb
 		def successors(node:PPDBNode):Iterable[PPDBNode] =
 		{
 			neighborsWithSyn(db, node.phrase).map(s => new PPDBNode(s._1, node.score * adjSim(db, s._1, node.phrase), s._2)).filter(_.score >= limit)
-		}
-	}
-
-	def main(args:Array[String])
-	{
-		val db = connect("/home/walker/Data/ppdb/small_no_num.db")
-		val trav = DistTraverser(5, db)
-
-		for( result <- trav.neighbors("arrested") )
-		{
-			println(result)
 		}
 	}
 }
