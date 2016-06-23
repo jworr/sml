@@ -7,8 +7,6 @@ A library for traversing graph based knowledge bases over words and phrases
 */
 object knowledge
 {
-	
-
 	/**
 	Defines a traverser over the knowledge base
 	*/

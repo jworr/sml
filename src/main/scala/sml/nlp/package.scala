@@ -182,6 +182,7 @@ package object nlp
 
 	/**
 	Represents a Sentence in a Document
+	In the stanford annotation the id starts at 1
 	*/
 	class Sentence(val id: Int, allTokens: Seq[Token], edges: Map[(Int,Int), String])
 	{
