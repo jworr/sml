@@ -64,6 +64,7 @@ object sqlite
 				case v:Timestamp => statement.setTimestamp(i,v)
 				case v:Date => statement.setDate(i,v)
 				case v:Boolean => statement.setBoolean(i,v)
+				case null => statement.setNull(i, java.sql.Types.NULL)
 			}
 
 			i += 1
