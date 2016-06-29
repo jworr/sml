@@ -4,7 +4,7 @@ import java.io.File
 import scala.collection.JavaConverters._
 
 import edu.mit.jwi.Dictionary
-import edu.mit.jwi.item.{IWord,POS,ISynsetID}
+import edu.mit.jwi.item.{IWord,POS,ISynsetID,Pointer,ISynset}
 
 import sml.knowledge.{Traverser, Node, TraverserImpl}
 
@@ -28,37 +28,55 @@ object wordnet
 		/**
 		Returns all the entries for the given string
 		*/
-		def lookupWord(word:String):Iterable[IWord] =
+		def lookupWord(word:String, posId:Option[POS]=None):Iterable[IWord] =
 		{
-			val pos = Seq(POS.NOUN, POS.VERB, POS.ADVERB, POS.ADJECTIVE)
+			val pos = posId match
+			{
+				case p:Some[POS] => Seq(p.get)
+				case _ => Seq(POS.NOUN, POS.VERB, POS.ADVERB, POS.ADJECTIVE)
+			}
 		
 			pos.map(connection.getIndexWord(word.replace(DELIM,WN_DELIM), _)).filter(_ != null).flatMap(_.getWordIDs.asScala.map(connection.getWord))
 		}
 
+		def lookupWord(word:Word):Iterable[IWord] = lookupWord(word.word, Some(word.pos))
+
 		/**
 		Get all the synonyms of a word
 		*/
-		def synonyms(word:IWord):Set[IWord] =
+		def relatedWords(word:Word, relation:RelationFollower):Set[Word] =
 		{
-			synsetWords(word, word.getSynset.getRelatedSynsets.asScala)
-		}
+			expand(lookupWord(word), relation)
+		}	
 
 		/**
 		Get all the synonyms of a word from the top k synsets
 		*/
-		def topKSynonyms(word:IWord, k:Int):Set[IWord] =
+		def topRelatedWords(word:Word, k:Int, relation:RelationFollower):Set[Word] =
 		{
-			synsetWords(word, word.getSynset.getRelatedSynsets.asScala.take(k))
+			expand(lookupWord(word).take(k), relation)
 		}
 
 		/**
-		Returns all the words associated with the word and given synsets
+		Returns the related synsets based on a relationship pointer
 		*/
-		def synsetWords(word:IWord, synsets:Iterable[ISynsetID]):Set[IWord] =
+		def relatedSynsets(rel:Pointer):IWord => Iterable[ISynset] =
 		{
-			//get all the words associated with this words synset and related synsets
-			(synsets.map(connection.getSynset) ++ Seq(word.getSynset)).flatMap(_.getWords.asScala).toSet
+			def followRelation(word:IWord):Iterable[ISynset] =
+			{
+				word.getSynset.getRelatedSynsets(rel).asScala.map(connection.getSynset)
+			}
+
+			followRelation
 		}
+
+		/**
+		Expands words via a relationship
+		*/
+		def expand(words:Iterable[IWord], relation:RelationFollower):Set[Word] =
+		{
+			words.flatMap(relation.relatedSynsets).flatMap(synsetToWords).toSet
+		}	
 
 		/**
 		Returns different lexical forms of the word
@@ -72,9 +90,89 @@ object wordnet
 	}
 
 	/**
+	Traverses wordnet according to a given relation
+	*/
+	trait RelationFollower
+	{
+		def relatedSynsets(word:IWord):Iterable[ISynset]
+	}
+
+	/**
+	Returns the synset related to the word's synonyms
+	*/
+	object Synonym extends RelationFollower
+	{
+		def relatedSynsets(word:IWord):Iterable[ISynset] = Seq(word.getSynset)
+	}
+
+	/**
+	Returns the synsets based on the given relationship pointer	
+	*/
+	class SynsetRelation(val db:WnConnection, val relationType:Pointer) extends RelationFollower
+	{
+		def relatedSynsets(word:IWord):Iterable[ISynset] =
+		{
+			word.getSynset.getRelatedSynsets(relationType).asScala.map(db.connection.getSynset)
+		}
+	}
+
+	/**
+	A collection of relationships
+	*/
+	class RelationGroup(val relations:Iterable[RelationFollower])
+	{
+		def relatedSynsets(word:IWord):Iterable[ISynset] =
+		{
+			relations.flatMap(_.relatedSynsets(word))
+		}
+	}
+
+	/**
+	The Hypernym relation
+	*/
+	class Hypernym(db:WnConnection) extends SynsetRelation(db, Pointer.HYPERNYM)
+
+	/**
+	The Instance-Hypernym relation
+	*/
+	class InstanceHypernym(db:WnConnection) extends SynsetRelation(db, Pointer.HYPERNYM_INSTANCE)
+
+	/**
+	The Hyponym relation
+	*/
+	class Hyponym(db:WnConnection) extends SynsetRelation(db, Pointer.HYPONYM)
+
+	/**
+	The Instance-Hypernym relation
+	*/
+	class InstanceHyponym(db:WnConnection) extends SynsetRelation(db, Pointer.HYPONYM_INSTANCE)
+
+	/**
+	The Holonym relation - a collection to a part
+	*/
+	class PartHolonym(db:WnConnection) extends SynsetRelation(db, Pointer.HOLONYM_PART)
+
+	/**
+	The Holonym relation - a collection to a part
+	*/
+	class MemberHolonym(db:WnConnection) extends SynsetRelation(db, Pointer.HOLONYM_MEMBER)
+
+	/**
+	The Meteronym relation - a part to a collection
+	*/
+	class SubstanceMeronym(db:WnConnection) extends SynsetRelation(db, Pointer.MERONYM_SUBSTANCE)
+
+	/**
+	The Entailment relation, similar to implication
+	*/
+	class Entailment(db:WnConnection) extends SynsetRelation(db, Pointer.ENTAILMENT)
+
+	/**
 	Traverses the synonym relations in PPDB
 	*/
-	class WnSynTraverser(val limit:Int, val db:WnConnection, val topK:Option[Int]=None) extends 
+	class WnTraverser(val limit:Int, val db:WnConnection, 
+		val relation:RelationFollower,
+		val topK:Option[Int]=None) extends 
 		TraverserImpl[WnNode]
 	{
 		/**
@@ -82,7 +180,7 @@ object wordnet
 		*/
 		def init( word:String ):Iterable[WnNode] = 
 		{
-			db.lookupWord(word).map(w => new WnNode(w, 0.0))
+			db.lookupWord(word).map(iwordToWord).map(w => new WnNode(w, 0.0))
 		}
 	
 		def hasPhrase(word:String):Boolean = db.lookupWord(word).nonEmpty
@@ -99,9 +197,12 @@ object wordnet
 			{
 				val syn = topK match
 				{
-					case n:Some[Int] => db.topKSynonyms(node.wnWord,n.get)
-					case _ => db.synonyms(node.wnWord)
+					case n:Some[Int] => db.topRelatedWords(node.word,n.get, relation)
+					case _ => db.relatedWords(node.word, relation)
 				}
+
+				//TODO remove
+				//println(s"next, depth $depth: ${syn.mkString("; ")}")
 
 				syn.map(n => new WnNode(n, depth))
 			}
@@ -115,11 +216,55 @@ object wordnet
 		}
 	}
 
+	case class Word(val word:String, val pos:POS)
+
+	/**
+	Converets a synset to a collection of words
+	*/
+	def synsetToWords(syn:ISynset):Iterable[Word] =
+	{
+		syn.getWords.asScala.map(w => Word(w.getLemma, POS.getPartOfSpeech(syn.getType)))
+	}
+
+	def iwordToWord(word:IWord):Word =
+	{
+		Word(word.getLemma, POS.getPartOfSpeech(word.getSynset.getType))
+	}
+
 	/**
 	Represents a node in Wordnet
 	*/
-	class WnNode(val wnWord:IWord, dist:Double) extends Node(wnWord.getLemma, dist)
+	class WnNode(val word:Word, dist:Double) extends Node(word.word, dist)
+	{
+		override def equals(other:Any): Boolean = other match
+		{
+			case that:WnNode=> that.word == word 
+			case _ => false
+		}
+		
+		override def hashCode:Int = word.hashCode 
+	}
 
 	val WN_DELIM = "_"
 	val DELIM = " "
+
+	/**
+	Does synonym lookups
+	*/
+	def main(args:Array[String])
+	{
+		val db = new WnConnection(args(0))
+		val word = args(1)
+		val depth = args(2).toInt
+
+		val trav = new WnTraverser(depth, db, Synonym)
+
+		println("Synonyms:")
+		println(trav.relatedPhrases(word).mkString("\n"))
+
+		val trav2 = new WnTraverser(depth, db, new Hypernym(db))
+
+		println("--------Hypernyms---------")
+		println(trav2.relatedPhrases(word).mkString("\n"))
+	}
 }
