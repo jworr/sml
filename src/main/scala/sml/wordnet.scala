@@ -42,6 +42,14 @@ object wordnet
 		def lookupWord(word:Word):Iterable[IWord] = lookupWord(word.word, Some(word.pos))
 
 		/**
+		Returns all the lemmas associated with the word
+		*/
+		def lemmas(word:String):Set[String] =
+		{
+			lookupWord(word).map(_.getLemma).toSet
+		}
+
+		/**
 		Get all the synonyms of a word
 		*/
 		def relatedWords(word:Word, relation:RelationFollower):Set[Word] =
