@@ -2,6 +2,7 @@ package sml
 
 import scala.collection.mutable.HashMap
 import scala.math.log
+import scala.util.Random
 
 /**
 Contains general untility functions
@@ -27,6 +28,22 @@ object util
 			toNum.toDouble(items.sum) / items.size
 		else
 			0.0
+	}
+
+	/**
+	Pick a random element out the list
+	*/
+	def randomChoice[T](items:Seq[T]):T =
+	{
+		randomChoices(1, items).head
+	}
+
+	/**
+	Pick k random elements from the list
+	*/
+	def randomChoices[T](k:Int, items:Seq[T]):Iterable[T] =
+	{
+		Random.shuffle(items).take(k)
 	}
 
 	/**
