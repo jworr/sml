@@ -23,6 +23,14 @@ object func
 	}
 
 	/**
+	Weaves the two iterables together
+	*/
+	def intersperse[T](first:Iterable[T], second:Iterable[T]):Iterable[T] =
+	{
+		first.zip(second).flatMap(p => Seq(p._1, p._2))
+	}
+
+	/**
 	Returns all combination pairs
 	*/
 	def combinations2[A](items:Iterable[A]): Iterable[(A,A)] =
