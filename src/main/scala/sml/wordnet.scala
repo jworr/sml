@@ -127,7 +127,7 @@ object wordnet
 	/**
 	A collection of relationships
 	*/
-	class RelationGroup(val relations:Iterable[RelationFollower])
+	class RelationGroup(val relations:Iterable[RelationFollower]) extends RelationFollower
 	{
 		def relatedSynsets(word:IWord):Iterable[ISynset] =
 		{
@@ -166,9 +166,24 @@ object wordnet
 	class MemberHolonym(db:WnConnection) extends SynsetRelation(db, Pointer.HOLONYM_MEMBER)
 
 	/**
+	Substance Holonym
+	*/
+	class SubstanceHolonym(db:WnConnection) extends SynsetRelation(db, Pointer.HOLONYM_SUBSTANCE)
+
+	/**
 	The Meteronym relation - a part to a collection
 	*/
 	class SubstanceMeronym(db:WnConnection) extends SynsetRelation(db, Pointer.MERONYM_SUBSTANCE)
+
+	/**
+	The Meteronym relation - a part to a collection
+	*/
+	class PartMeronym(db:WnConnection) extends SynsetRelation(db, Pointer.MERONYM_PART)
+
+	/**
+	The Meteronym relation - a part to a collection
+	*/
+	class MemberMeronym(db:WnConnection) extends SynsetRelation(db, Pointer.MERONYM_MEMBER)
 
 	/**
 	The Entailment relation, similar to implication
@@ -270,9 +285,14 @@ object wordnet
 		println("Synonyms:")
 		println(trav.relatedPhrases(word).mkString("\n"))
 
-		val trav2 = new WnTraverser(depth, db, new Hypernym(db))
+		val trav2 = new WnTraverser(depth, db, new InstanceHypernym(db))
 
 		println("--------Hypernyms---------")
 		println(trav2.relatedPhrases(word).mkString("\n"))
+
+		val trav3 = new WnTraverser(depth, db, new InstanceHyponym(db))
+
+		println("--------Hyponyms---------")
+		println(trav3.relatedPhrases(word).mkString("\n"))
 	}
 }
