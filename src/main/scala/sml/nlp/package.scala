@@ -272,6 +272,7 @@ package object nlp
 
 		/**
 		Returns all the ancestors of the token all the way back to the root
+		the sequence will be root to token
 		*/
 		def ancestors(token:Token):Seq[Token] =
 		{
@@ -290,6 +291,15 @@ package object nlp
 			}
 
 			helper(token, List())
+		}
+
+		/**
+		Returns the tokens syntatically inbetween the two tokens, bookended by
+		the two given tokens
+		*/
+		def middleChildren(ancestor:Token, descendent:Token):Seq[Token] =
+		{
+			ancestors(descendent).dropWhile(_ != ancestor)
 		}
 
 		/**
@@ -314,12 +324,15 @@ package object nlp
 		def commonAncestor(one:Token, another:Token):Option[Token] =
 		{
 			//make sure the two tokens are in the same sentence
-			if(one.sentenceId == another.sentenceId)
+			if(sameSentence(one, another))
 				commonAncestor(ancestors(one), ancestors(another))
 			else
 				None
 		}
 
+		/**
+		Find the first place the two ancestor paths overlap
+		*/
 		def commonAncestor(one:Seq[Token], another:Seq[Token]):Option[Token] =
 		{
 			val prefix = one.zip(another).takeWhile(p => p._1 == p._2)
@@ -329,6 +342,42 @@ package object nlp
 				None
 			else
 				Some(prefix.last._1)
+		}
+
+		/**
+		Returns the syntatic path between the two tokens
+		*/
+		def path(start:Token, end:Token):Option[Seq[Token]] =
+		{
+			//if the two tokens are in the same sentence then find a possible
+			//path between them
+			if(sameSentence(start,end))
+			{
+				//if there is a common ancestor, then there is a syntatic
+				//relationship between the two tokens
+				commonAncestor(start, end) match
+				{
+					case an:Some[Token] =>
+					{
+						val common = an.get
+
+						//if the start is the common ancestor
+						if(start == common)
+							Some(middleChildren(start,end))
+						
+						else if(end == common)
+							Some(middleChildren(end,start).reverse)
+						
+						else
+							Some(middleChildren(common,start).reverse ++ middleChildren(common,end))
+					}
+					case _ => None
+				}
+			}
+			else
+			{
+				None
+			}
 		}
 
 		/**
@@ -402,17 +451,17 @@ package object nlp
 		/**
 		Returns the maximum token id in the sentence
 		*/
-		def maxTokenId: Int = size
+		val maxTokenId: Int = size
 
 		/**
 		Returns the minimum token id
 		*/
-		def minTokenId: Int = 1
+		val minTokenId: Int = 1
 
 		/**
 		 * Returns true if all the token ids are in the sentence
 		 */
-		def validIds(tokenIds:Range):Boolean = tokenIds.forall(i => minTokenId <= i && i <= maxTokenId)
+		def validIds(tokenIds:Range):Boolean = (minTokenId <= tokenIds.head) && (tokenIds.last <= maxTokenId)
 		
 		def hasDepType(token:Token):Boolean = token.sentenceId == id && dependencies.contains(token.id)
 
@@ -634,6 +683,14 @@ package object nlp
 			else
 				sentCmp
 		}
+	}
+
+	/**
+	Returns true if the two tokens appear the same sentence
+	*/
+	def sameSentence(one:Token, another:Token):Boolean =
+	{
+		one.sentenceId == another.sentenceId
 	}
 
 	/**
