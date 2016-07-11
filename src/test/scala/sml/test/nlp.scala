@@ -204,8 +204,6 @@ object nlp
 			val sent = testDoc.sentenceById(2)
 			val token = sent.tokenById(3)
 
-			println(s"problem token: '$token'")
-
 			sent.descendants(token) should be (Set())
 		}
 
