@@ -221,7 +221,7 @@ package object nlp
 		*/
 		def coveredChunks(start:Int, end:Int): Seq[Chunk] =
 		{
-			return chunks.slice(start,end+1)
+			chunks.slice(start,end+1)
 		}
 
 		/**
@@ -233,7 +233,7 @@ package object nlp
 			val start = indexed.find(c => c._1.hasToken(seq.head)).get
 			val end = indexed.find(c => c._1.hasToken(seq.last)).get
 
-			return Range(start._2, end._2+1)
+			Range(start._2, end._2+1)
 		}
 
 		/**
@@ -383,13 +383,19 @@ package object nlp
 		/**
 		 * Returns the nearsest token with the given type
 		 */
-		def nearestTokenWithType(seed:Token, searchType:String):Option[Token] =
+		def nearestTokenWithType(seed:Token, searchType:String, subset:Set[Token]=null):Option[Token] =
 		{
 			val candidates = tokensWithType(searchType).filter(t => t != seed).map(c => (c, syntaticDistance(seed,c))).filter(_._2.nonEmpty)
 
+			//if a subset is specified, only consider those in it
+			val sub = if(subset != null)
+				candidates.filter(p => subset.contains(p._1))
+			else
+				candidates
+
 			//if there are any candidates find the closest one
-			if(candidates.nonEmpty)
-				Some(candidates.minBy(_._2)._1)
+			if(sub.nonEmpty)
+				Some(sub.minBy(_._2)._1)
 			else
 				None
 		}
@@ -402,7 +408,7 @@ package object nlp
 		/**
 		 * Returns the nearest object to the token
 		 */
-		def nearestObject(seed:Token):Option[Token] = nearestTokenWithType(seed, GENERIC_OBJECT)
+		def nearestObject(seed:Token):Option[Token] = nearestTokenWithType(seed, GENERIC_OBJECT, descendants(seed).toSet)
 
 		/**
 		 * Returns the number of tokens in the parse tree between the two
