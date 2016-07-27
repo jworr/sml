@@ -165,7 +165,7 @@ package object nlp
 			case _ => false
 		}
 
-		override def hashCode = id.hashCode
+		override val hashCode = id.hashCode
 	}
 
 	/**
@@ -406,9 +406,14 @@ package object nlp
 		def nearestSubject(seed:Token):Option[Token] = nearestTokenWithType(seed, GENERIC_SUBJECT)
 
 		/**
-		 * Returns the nearest object to the token
+		 * Returns the nearest object to the token that is descendant
 		 */
 		def nearestObject(seed:Token):Option[Token] = nearestTokenWithType(seed, GENERIC_OBJECT, descendants(seed).toSet)
+
+		/**
+		Returns the nearest object to the token that is also a parent or ancestor
+		*/
+		def nearestParentObject(seed:Token):Option[Token] = nearestTokenWithType(seed, GENERIC_OBJECT, ancestors(seed).toSet)
 
 		/**
 		 * Returns the number of tokens in the parse tree between the two
@@ -468,7 +473,9 @@ package object nlp
 		 * Returns true if all the token ids are in the sentence
 		 */
 		def validIds(tokenIds:Range):Boolean = (minTokenId <= tokenIds.head) && (tokenIds.last <= maxTokenId)
-		
+	
+		def validId(tokenId:Int):Boolean = (minTokenId <= tokenId) && (tokenId <= maxTokenId)
+
 		def hasDepType(token:Token):Boolean = token.sentenceId == id && dependencies.contains(token.id)
 
 		def hasDepType(token: Token, dep: String): Boolean = depType(token).getOrElse("").contains(dep)
@@ -493,7 +500,7 @@ package object nlp
 			case _ => false
 		}
 
-		override def hashCode:Int = id.hashCode
+		override val hashCode:Int = id.hashCode
 
 		def toDot:String = toDot(Seq(), "")
 
@@ -594,7 +601,7 @@ package object nlp
 		/**
 		Tokens are hashed based on their two ids
 		*/
-		override def hashCode = id.hashCode + sentenceId.hashCode
+		override val hashCode = id.hashCode + sentenceId.hashCode
 
 		/**
 		Compares Tokens based on their sentence id and their token id
@@ -889,8 +896,7 @@ package object nlp
 	val GENERIC_SUBJECT = "subj"
 	val GENERIC_OBJECT = "obj"
 	val GENERIC_AUX = "aux"
-	val GOVERNOR = "gov"
-
+	
 	val PUNCTUATION = Set(".", ",", ":")
 
 	val blackList = Set("'s", "-LRB-", "-RRB-", "-LSB-", "-RSB-")

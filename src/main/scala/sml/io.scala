@@ -32,7 +32,7 @@ object io
 	def splitSuffix(path: String): (String, String) =
 	{
 		val result = baseName(path).split("\\.", 2)
-		return (join(parent(path), result(0)), result(1))
+		(join(parent(path), result(0)), result(1))
 	}
 
 	/**

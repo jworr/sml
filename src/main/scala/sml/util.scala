@@ -31,6 +31,14 @@ object util
 	}
 
 	/**
+	Creates a map from an iterable of non-unique tuples
+	*/
+	def tuplesToMap[T,S](tuples:Iterable[(T,S)]):Map[T,Iterable[S]] =
+	{
+		tuples.groupBy(_._1).mapValues(_.map(_._2))
+	}
+
+	/**
 	Pick a random element out the list
 	*/
 	def randomChoice[T](items:Seq[T]):T =
