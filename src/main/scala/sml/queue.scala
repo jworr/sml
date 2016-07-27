@@ -37,7 +37,7 @@ object queue
 		 */
 		def ++(other:BoundedQueue[T]):BoundedQueue[T] =
 		{
-			val joined = removeDuplicates( (queue ++ other.queue) ).sorted
+			val joined = removeDuplicates((queue ++ other.queue).sorted)
 			val start = scala.math.max(joined.size - limit, 0)
 			val newQueue = joined.slice(start, joined.size)
 
