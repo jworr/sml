@@ -5,6 +5,7 @@ import org.scalatest._
 
 import sml.nlp._
 import sml.nlp.Phrase
+import sml.nlp.tree.buildTree
 
 /**
  * Tests the main package of sml.nlp
@@ -256,6 +257,23 @@ object nlp
 				
 				sent.parent(start).get should be (target)
 			}
+		}
+	}
+
+	class ParseTreeTest extends FlatSpec with Matchers
+	{
+		val example = "(ROOT (S (NP (PRP It)) (VP (VBD was) (ADJP (JJ possible) (S (VP (TO to) (VP (VB avert) (NP (DT this) (NN war))))))) (. .)))"
+
+		"Parse Tree" should "be parse a tree out of the given string" in
+		{
+			val tree = buildTree(example)
+			val target = Set("NP", "VP", ".")
+
+			tree.root.children.size should be (1)
+
+			val clause = tree.root.children.head
+
+			clause.children.count(c => target.contains(c.nodeType)) should be (3)
 		}
 	}
 

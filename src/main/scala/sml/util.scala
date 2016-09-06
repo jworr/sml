@@ -39,6 +39,14 @@ object util
 	}
 
 	/**
+	Do the two sets intersect?
+	*/
+	def intersect[T](items:Set[T], other:Set[T]):Boolean =
+	{
+		items.exists(other.contains)
+	}
+
+	/**
 	Pick a random element out the list
 	*/
 	def randomChoice[T](items:Seq[T]):T =

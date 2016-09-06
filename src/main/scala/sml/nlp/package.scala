@@ -6,16 +6,18 @@ import scala.collection.immutable.TreeMap
 import scala.collection.mutable.HashMap
 import scala.collection.Map
 import scala.math.{min,max,abs}
+import scala.util.matching.Regex
 
 import sml.io.{baseName,ls,join,removeSuffix}
 import sml.nlp.chunker.{Chunk, chunkSentence}
+import sml.nlp.tree.{buildTree, ParseTree}
 
 /**
 A library to load core nlp xml into objects
 */
 package object nlp
 {
-	class Document(val id: String, val sentences: Seq[Sentence], val corefGroups: Seq[CorefGroup])
+	class Document(val id: String, val sentences: Seq[Sentence], val corefGroups: Set[CorefGroup])
 	{
 		/*Returns the sentence specified by sentence id*/
 		def sentenceById(sentenceId: Int): Sentence = sentences(sentenceId -1)
@@ -137,14 +139,35 @@ package object nlp
 		}
 
 		/**
+		Returns the boarders of the context
+		*/
+		def contextBoarders(span:Seq[Token], window:Int):(Int, Int) =
+		{
+			val sent = sentenceById(span.head.sentenceId)
+			(max(sent.minTokenId, span.head.id - window), min(span.last.id + window, sent.maxTokenId))
+		}
+
+		/**
+		Returns a the context of the span, a fix window on either side
+		*/
+		def context(span:Seq[Token], window:Int):(Seq[Token], Seq[Token]) =
+		{
+			val sent = sentenceByToken(span.head)
+			val (start, end) = contextBoarders(span, window)
+			val left = sent.tokensById(Range(start, span.head.id))
+			val right = sent.tokensById(Range(span.last.id+1, end+1))
+	
+			(left, right)
+		}
+
+		/**
 		Returns the window, including the given sequence, on either side of the
 		sequence
 		*/
 		def window(subseq:Seq[Token], window:Int):Seq[Token] =
 		{
-			val sent = sentenceById(subseq.head.sentenceId)
-			val start = max(0, subseq.head.id - window)
-			val end = min(subseq.last.id + window, sent.tokens.last.id)
+			val sent = sentenceByToken(subseq.head)
+			val (start, end) = contextBoarders(subseq, window)
 
 			tokens(sent.id, Range(start,end+1))
 		}
@@ -169,6 +192,48 @@ package object nlp
 	}
 
 	/**
+	A document with the path to its location
+	*/
+	trait DocRef
+	{
+		/**
+		 * Get the document
+		 */
+		def doc:Document
+
+		def docId:String	
+
+		/**
+		 * The path to the document
+		 */
+		val path:String
+
+		def asLazy:LazyDocRef = new LazyDocRef(path, docId)
+
+		def inMemory:InMemDocRef = new InMemDocRef(doc, path)
+	}
+
+	/**
+	 * Keeps a reference to a document in memory
+	 */
+	class InMemDocRef(override val doc:Document, override val path:String) extends DocRef
+	{
+		def docId:String = doc.id
+	}
+
+	/**
+	 * A lazy document reference that loads the document on demand
+	 */
+	class LazyDocRef(val path:String, val docId:String) extends DocRef
+	{
+		def doc:Document = 
+		{
+			println(s"loading $path")
+			parseXMLDoc(loadFile(path), docId)
+		}
+	}
+
+	/**
 	An index for a document by Token (word)
 	*/
 	class DocumentIndex(val document:Document)
@@ -184,7 +249,7 @@ package object nlp
 	Represents a Sentence in a Document
 	In the stanford annotation the id starts at 1
 	*/
-	class Sentence(val id: Int, allTokens: Seq[Token], edges: Map[(Int,Int), String])
+	class Sentence(val id:Int, allTokens:Seq[Token], edges:Map[(Int,Int), String], val parseTree:ParseTree)
 	{
 		val tokMap: TreeMap[Int,Token] = TreeMap(allTokens.map( (t:Token) => (t.id,t) ):_*)
 
@@ -197,7 +262,13 @@ package object nlp
 
 		def tokenById(tokenId: Int): Token = tokMap(tokenId)
 
-		def tokensById(span:Range): Seq[Token] = tokens.slice(span.head-1, span.end-1)
+		def tokensById(span:Range):Seq[Token] = 
+		{
+			if(span.nonEmpty)
+				tokens.slice(span.head-1, span.end-1)
+			else
+				Seq()
+		}
 
 		/**
 		Returns all the tokens with the given dependency type
@@ -259,7 +330,7 @@ package object nlp
 		}
 
 		/**
-		Returns the children of the token
+		Returns the syntatic children of the token
 		*/
 		def children(token:Token):Iterable[Token] =
 		{
@@ -456,7 +527,10 @@ package object nlp
 		*/
 		def syntaticHead(tokens:Iterable[Token]):Token =
 		{
-			tokens.minBy(t => depth(t))
+			if(tokens.size > 1)
+				tokens.minBy(depth)
+			else
+				tokens.head
 		}
 
 		/**
@@ -557,9 +631,13 @@ package object nlp
 
 		def isPronoun = pos.startsWith("PR")
 
+		def isConjuction = pos.startsWith("CC")
+
 		def isPunctuation = PUNCTUATION.contains(pos)
 
 		def isBlackListed = blackList.contains(word)
+
+		def isQuote = quoteReg.findFirstIn(word).nonEmpty
 
 		def simplePOS:String =
 		{
@@ -649,7 +727,15 @@ package object nlp
 		 */
 		def shareSentence(other:Seq[Token]):Boolean =
 		{
-			tokens.map(_.sentenceId).toSet.intersect(other.map(_.sentenceId).toSet).nonEmpty
+			shareSentence(other.map(_.sentenceId).toSet)
+		}
+
+		/**
+		 * Returns true if the phrases are in the same sentence
+		 */
+		def shareSentence(sentenceIds:Set[Int]):Boolean =
+		{
+			tokens.map(_.sentenceId).exists(sentenceIds.contains)
 		}
 
 		/**
@@ -767,22 +853,30 @@ package object nlp
 	/**
 	Loads all the annotated documents from a directory
 	*/
-	def loadDocs(dirName:String): Iterable[Document] = ls(dirName).filter(m => !m.endsWith(".swp.xml")).map(parseDoc)
+	def loadDocs(dirName:String):Iterable[Document] = ls(dirName).filter(m => !m.endsWith(".swp.xml")).map(parseDoc)
 
 	/**
 	Loads all the annotated documents given with the given prefix and suffix
 	*/
-	def loadDocs(dir:String, prefix:String, suffix:String, docNames:Iterable[String]): Iterable[Document] = 
+	def loadDocs(dir:String, prefix:String, suffix:String, docNames:Iterable[String]):Iterable[Document] = 
 	{
-		docNames.map(n => parseDoc(join(dir, prefix+n+suffix), prefix))
+		loadDocRefs(dir, prefix, suffix, docNames).map(_.doc)
 	}
 
 	def loadDocs(dir:String, suffix:String, docNames:Iterable[String]): Iterable[Document] = loadDocs(dir, "", suffix, docNames)
 
 	/**
+	Loads documents with a reference to their path
+	*/
+	def loadDocRefs(dir:String, prefix:String, suffix:String, docNames:Iterable[String]):Iterable[DocRef] = 
+	{
+		docNames.map(n => parseDocRef(join(dir, prefix+n+suffix), prefix))
+	}
+	
+	/**
 	Parses the document from the given string
 	*/
-	def parseDocFromString(xml:String, docId:String): Document =
+	def parseDocFromString(xml:String, docId:String):Document =
 	{
 		parseXMLDoc(loadString(xml), docId)
 	}
@@ -790,13 +884,19 @@ package object nlp
 	/**
 	Returns a document parsed from an xml file
 	*/
-	def parseDoc(fileName:String, prefix:String): Document =
+	def parseDocRef(fileName:String, prefix:String):DocRef =
 	{
 		//load the doc as xml and parse it
-		parseXMLDoc(loadFile(fileName), parseDocId(fileName,prefix))
+		new InMemDocRef(parseXMLDoc(loadFile(fileName), parseDocId(fileName,prefix)), fileName)
+		//new LazyDocRef(fileName, parseDocId(fileName,prefix))
 	}
 
-	def parseDoc(fileName:String): Document = parseDoc(fileName, "")
+	/**
+	Returns a document parsed from an xml file
+	*/
+	def parseDoc(fileName:String, prefix:String):Document = parseDocRef(fileName, prefix).doc
+
+	def parseDoc(fileName:String):Document= parseDoc(fileName, "")
 
 	/**
 	Parses the document from the xml
@@ -807,9 +907,9 @@ package object nlp
 		val sentences = (xml \\ "sentences" \ "sentence").map(parseSentence)
 
 		//parse out all the coref groups
-		val coref = (xml \ "root" \ "document" \ "coreference" \ "coreference").map(parseCoref)
+		val coref = (xml \ "root" \ "document" \ "coreference" \ "coreference").map(parseCoref).toSet
 
-		return new Document(docId, sentences, coref)
+		new Document(docId, sentences, coref)
 	}
 
 	/**
@@ -834,7 +934,10 @@ package object nlp
 		//parse out the dependency graph
 		val edges = buildGraph((node \ "dependencies").filter((n:Node) => ((n \ "@type")(0).text == "basic-dependencies"))(0))
 
-		new Sentence(id, toks, edges)
+		//read the parse tree
+		val tree = buildTree((node \ "parse").text)
+
+		new Sentence(id, toks, edges, tree)
 	}
 
 	/**
@@ -884,6 +987,11 @@ package object nlp
 	Parses a token out of the xml, the field should only be present once
 	*/
 	def parseField(node: Node, field: String): String = (node \ field).text	
+
+	/**
+	A regex for quotes
+	*/
+	val quoteReg = new Regex("^[\"\'`]+$")
 
 	/**
 	List all the Penn-Treebank POS tags
