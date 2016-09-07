@@ -23,7 +23,7 @@ object tree
 		{
 			val pairs = for(clause <- clauses) yield
 			{
-				leafs(descendents(clause)).map(l => (l.index, clause))
+				leafs(descendents(isNotClause, clause)).map(l => (l.index, clause))
 			}
 
 			tuplesToMap(pairs.flatten).mapValues(_.toSet)
@@ -47,15 +47,16 @@ object tree
 		*/
 		def nodes:Iterable[TreeNode] =
 		{
-			Seq(root) ++ descendents(root)
+			Seq(root) ++ descendents(x => true, root)
 		}
 
 		/**
 		Returns all the descendents of the node
 		*/
-		def descendents(node:TreeNode):Iterable[TreeNode] =
+		def descendents(filterPred:TreeNode=>Boolean,node:TreeNode):Iterable[TreeNode] =
 		{
-			node.children ++ node.children.flatMap(descendents)	
+			val next = node.children.filter(filterPred)
+			next ++ next.flatMap(descendents(filterPred, _))
 		}
 	}
 
@@ -234,6 +235,11 @@ object tree
 			case n:Leaf => n
 		}
 	}
+
+	/**
+	Returns true if the node is not a clause
+	*/
+	def isNotClause(t:TreeNode):Boolean = !t.isClause
 
 	abstract class TreeToken
 	{
