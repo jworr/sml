@@ -41,7 +41,7 @@ object sqlite
 		setParams(query, values)
 
 		//get and return the results
-		return query.executeQuery()
+		query.executeQuery()
 	}
 
 	/**

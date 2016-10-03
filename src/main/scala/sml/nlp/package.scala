@@ -89,6 +89,22 @@ package object nlp
 		def tokens:Seq[Token] = sentences.flatMap(_.tokens)
 
 		/**
+		Returns all the noun phrases in the document
+		*/
+		def nounPhrases:Iterable[Seq[Token]] =
+		{
+			sentences.flatMap(_.nounPhrases)
+		}
+
+		/**
+		Returns all the verb phrases in the document
+		*/
+		def verbPhrases:Iterable[Seq[Token]] =
+		{
+			sentences.flatMap(_.verbPhrases)
+		}
+
+		/**
 		 * Determines the lexical distance between two phrases
 		 */
 		def lexicalDistance(phrase:Seq[Token], other:Seq[Token]):Int =
@@ -279,6 +295,22 @@ package object nlp
 		}
 
 		/**
+		Returns all the noun phrases in the sentence
+		*/
+		def nounPhrases:Iterable[Seq[Token]] =
+		{
+			parseTree.nounPhrases.map(tokensById).filter(_.exists(t => t.isNoun))
+		}
+
+		/**
+		Returns all the verb phrases in the sentence
+		*/
+		def verbPhrases:Iterable[Seq[Token]] =
+		{
+			parseTree.verbPhrases.map(tokensById).filter(_.exists(t => t.isVerb))
+		}
+
+		/**
 		Returns the chunks the token sequence overlaps
 		*/
 		def coveredChunks(seq:Seq[Token]): Seq[Chunk] =
@@ -312,10 +344,7 @@ package object nlp
 		*/
 		def depType(token:Token):Option[String] =
 		{
-			if(hasDepType(token))
-				Some(dependencies(token.id)._1)
-			else
-				None
+			if(hasDepType(token)) Some(dependencies(token.id)._1) else None
 		}
 
 		/**
@@ -343,7 +372,7 @@ package object nlp
 
 		/**
 		Returns all the ancestors of the token all the way back to the root
-		the sequence will be root to token
+		the sequence will be root to token - the list is ordered from the top down
 		*/
 		def ancestors(token:Token):Seq[Token] =
 		{
@@ -557,6 +586,26 @@ package object nlp
 		def isSubject( token: Token ): Boolean = hasDepType(token, GENERIC_SUBJECT)
 
 		def isObject( token: Token ): Boolean = hasDepType(token, GENERIC_OBJECT)
+	
+		/**
+		 * Returns true if the token plays the role of a modifier in the sentence
+		 */
+		def isMod(token:Token):Boolean = depType(token).getOrElse("").contains("mod")
+		
+		/*{
+			if(hasDepType(token))
+			{
+				val dType = depType(token).getOrElse("")
+
+				dType.contains("mod") || dType == "advcl"
+			}
+			else false
+		} */
+	
+		/**
+		Returns true if the token has a modifier
+		*/
+		def hasMod(token:Token):Boolean = children(token).exists(isMod)
 		
 		def isAux( token: Token ): Boolean = hasDepType(token, GENERIC_AUX)
 
@@ -620,6 +669,8 @@ package object nlp
 	extends Ordered[Token]
 	{
 		def isVerb = pos.startsWith("VB")
+
+		def isPastParticple = pos == "VBN"
 
 		def isNoun = pos.startsWith("NN")
 
@@ -1025,15 +1076,10 @@ package object nlp
 		val doc = parseDoc(args(0))
 
 		//print out all the sentences
-		for( sentence <- doc.sentences )
+		for( (sentence,i) <- doc.sentences.zipWithIndex )
 		{
-			println(sentence)		
-		}
-
-		//print out all the coref groups
-		for( group <- doc.corefGroups )
-		{
-			println(group)
+			println(s"Sentence $i: ${sentence.nounPhrases.toSeq.sortBy(_.head.id).map(_.mkString(" ")).mkString("\n")}")
+			//println(sentence.verbPhrases.mkString("\n"))		
 		}
 	}
 }

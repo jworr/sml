@@ -24,13 +24,13 @@ object ppdb
 		result.next
 
 		//check if any paraphases match
-		return result.getInt(1) > 0
+		result.getInt(1) > 0
 	}
 
 	/**
 	Returns all similar phrases to the given phrase along with a similarity score
 	*/
-	def similarPhrases(db:Connection)(phrase:String, agiga:Boolean = true): Iterable[(String, Double)] =
+	def similarPhrases(db:Connection)(phrase:String, agiga:Boolean=true): Iterable[(String, Double)] =
 	{
 		val query = if(agiga) 
 			"select target, agiga_sim, pos from similarity where source = ?"
@@ -48,7 +48,7 @@ object ppdb
 			(row.getString(1), row.getDouble(2))
 		}
 
-		return sim ++ List( (source, 1.0) )
+		sim ++ List((source, 1.0))
 	}
 
 	/**
@@ -86,7 +86,7 @@ object ppdb
 		val query = "select distinct target from similarity where source = ?"
 	
 		//execute the query and return the results
-		return prepareAndQuery(db, query, phrase.toLowerCase).map(_.getString(1))
+		prepareAndQuery(db, query, phrase.toLowerCase).map(_.getString(1))
 	}
 
 	/**

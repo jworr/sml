@@ -47,16 +47,56 @@ object tree
 		*/
 		def nodes:Iterable[TreeNode] =
 		{
-			Seq(root) ++ descendents(x => true, root)
+			Seq(root) ++ descendents(root)
 		}
 
 		/**
-		Returns all the descendents of the node
+		Returns all the descendents of the node, with the predicate determining
+		which nodes to keep
 		*/
-		def descendents(filterPred:TreeNode=>Boolean,node:TreeNode):Iterable[TreeNode] =
+		def descendents(filterPred:TreeNode=>Boolean, node:TreeNode):Iterable[TreeNode] =
 		{
 			val next = node.children.filter(filterPred)
 			next ++ next.flatMap(descendents(filterPred, _))
+		}
+
+		/**
+		Returns all the descendants of the node
+		*/
+		def descendents(node:TreeNode):Iterable[TreeNode] = descendents(x => true, node)
+
+		/**
+		Returns all the noun phrases/chunks
+		*/
+		def nounPhrases:Iterable[Range] =
+		{
+			qualifiedPhrases(x => x.isNounPhrase)
+		}
+		
+		/**
+		Returns all the verb phrases/chunks
+		*/
+		def verbPhrases:Iterable[Range] =
+		{
+			qualifiedPhrases(x => x.isVerbPhrase)
+		}
+
+		/**
+		Returns all the phrases of targeted internal nodes
+		*/
+		def qualifiedPhrases(target:TreeNode => Boolean):Iterable[Range] =
+		{
+			val targetPhrases = descendents(root).filter(_.isNounPhrase)
+
+			//for each internal node, collect all the leaf nodes under it
+			val phrases = for(node <- targetPhrases) yield
+			{
+				val kids = node.children.filter(_.isLeaf).map{ case l:Leaf => l.index }
+				
+				if(kids.nonEmpty) Range(kids.min, kids.max+1) else Range(0,0)
+			}
+
+			phrases.filter(_.nonEmpty)
 		}
 	}
 
@@ -67,10 +107,19 @@ object tree
 		def isLeaf:Boolean = children.isEmpty
 
 		def isClause:Boolean = nodeType == "S" || nodeType == "SBAR"
+
+		def isNounPhrase:Boolean = false
+
+		def isVerbPhrase:Boolean = false
 	}
 
 	case class Internal(nType:String, override val children:Set[TreeNode]) 
 		extends TreeNode(nType)
+	{
+		override def isNounPhrase:Boolean = nodeType == "NP"
+
+		override def isVerbPhrase:Boolean = nodeType == "VP"
+	}
 
 	case class Leaf(nType:String, val content:String, val index:Int) extends TreeNode(nType)
 	{

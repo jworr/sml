@@ -39,6 +39,14 @@ object util
 	}
 
 	/**
+	Joins a map together
+	*/
+	def joinMap[T,S](tuples:Iterable[(T,Iterable[S])]*):Map[T,Set[S]] =
+	{
+		tuples.flatten.groupBy(_._1).mapValues(_.map(_._2).reduce(_ ++ _).toSet)
+	}
+
+	/**
 	Do the two sets intersect?
 	*/
 	def intersect[T](items:Set[T], other:Set[T]):Boolean =
