@@ -155,6 +155,16 @@ object babelnet
 	}
 
 	/**
+	Returns a factory function for hypernym traversers
+	*/
+	def makeFactory(limit:Int, path:String, blackList:Set[SynsetId]=Set(), transitive:Boolean=false):()=>HypernymTraverser =
+	{
+		def build():HypernymTraverser = new HypernymTraverser(limit, path, blackList, transitive)
+
+		build
+	}
+
+	/**
 	 * Returns all the synsets in the database without transative relationships
 	 */
 	def allSynsets(db:Connection):Iterable[SynsetId] =

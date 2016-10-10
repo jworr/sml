@@ -511,6 +511,19 @@ package object nlp
 		def nearestObject(seed:Token):Option[Token] = nearestTokenWithType(seed, GENERIC_OBJECT, descendants(seed).toSet)
 
 		/**
+		Returns the nearest object to the token who is not nescessarily a descendant
+		*/
+		def nearestSentObject(seed:Token):Option[Token] = 
+		{
+			val obj = nearestObject(seed)
+
+			if(obj.isEmpty)
+				nearestTokenWithType(seed, GENERIC_OBJECT)
+			else
+				obj
+		}
+
+		/**
 		Returns the nearest object to the token that is also a parent or ancestor
 		*/
 		def nearestParentObject(seed:Token):Option[Token] = nearestTokenWithType(seed, GENERIC_OBJECT, ancestors(seed).toSet)
@@ -581,12 +594,14 @@ package object nlp
 
 		def hasDepType(token:Token):Boolean = token.sentenceId == id && dependencies.contains(token.id)
 
-		def hasDepType(token: Token, dep: String): Boolean = depType(token).getOrElse("").contains(dep)
+		def hasDepType(token:Token, dep:String):Boolean = depType(token).getOrElse("").contains(dep)
 
-		def isSubject( token: Token ): Boolean = hasDepType(token, GENERIC_SUBJECT)
+		def isSubject(token:Token):Boolean = hasDepType(token, GENERIC_SUBJECT)
 
-		def isObject( token: Token ): Boolean = hasDepType(token, GENERIC_OBJECT)
-	
+		def isObject(token:Token):Boolean = hasDepType(token, GENERIC_OBJECT)
+
+		def isCausalComplement(token:Token):Boolean = hasDepType(token, CAUSAL_COMPLEMENT)
+
 		/**
 		 * Returns true if the token plays the role of a modifier in the sentence
 		 */
@@ -1055,6 +1070,7 @@ package object nlp
 	val GENERIC_SUBJECT = "subj"
 	val GENERIC_OBJECT = "obj"
 	val GENERIC_AUX = "aux"
+	val CAUSAL_COMPLEMENT = "xcomp"
 	
 	val PUNCTUATION = Set(".", ",", ":")
 
