@@ -508,7 +508,9 @@ package object nlp
 		/**
 		 * Returns the nearest object to the token that is descendant
 		 */
-		def nearestObject(seed:Token):Option[Token] = nearestTokenWithType(seed, GENERIC_OBJECT, descendants(seed).toSet)
+		def nearestObject(seed:Token):Option[Token] = nearestObject(seed, descendants(seed).toSet)
+
+		def nearestObject(seed:Token, subset:Set[Token]):Option[Token] = nearestTokenWithType(seed, GENERIC_OBJECT, subset)
 
 		/**
 		Returns the nearest object to the token who is not nescessarily a descendant
@@ -600,7 +602,9 @@ package object nlp
 
 		def isObject(token:Token):Boolean = hasDepType(token, GENERIC_OBJECT)
 
-		def isCausalComplement(token:Token):Boolean = hasDepType(token, CAUSAL_COMPLEMENT)
+		def isClausalComplement(token:Token):Boolean = hasDepType(token, CAUSAL_COMPLEMENT)
+
+		def isRelativeClause(token:Token):Boolean = hasDepType(token, RELATIVE_CLAUSE)
 
 		/**
 		 * Returns true if the token plays the role of a modifier in the sentence
@@ -1071,6 +1075,7 @@ package object nlp
 	val GENERIC_OBJECT = "obj"
 	val GENERIC_AUX = "aux"
 	val CAUSAL_COMPLEMENT = "xcomp"
+	val RELATIVE_CLAUSE = "rcmod"
 	
 	val PUNCTUATION = Set(".", ",", ":")
 
