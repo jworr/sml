@@ -485,7 +485,7 @@ package object nlp
 		 */
 		def nearestTokenWithType(seed:Token, searchType:String, subset:Set[Token]=null):Option[Token] =
 		{
-			val candidates = tokensWithType(searchType).filter(t => t != seed).map(c => (c, syntaticDistance(seed,c))).filter(_._2.nonEmpty)
+			val candidates = tokensWithType(searchType).filter(_ != seed).map(c => (c, syntaticDistance(seed,c))).filter(_._2.nonEmpty)
 
 			//if a subset is specified, only consider those in it
 			val sub = if(subset != null)
@@ -504,6 +504,8 @@ package object nlp
 		 * Returns the nearest subject to the token
 		 */
 		def nearestSubject(seed:Token):Option[Token] = nearestTokenWithType(seed, GENERIC_SUBJECT)
+		
+		def nearestSubject(seed:Token, subset:Set[Token]):Option[Token] = nearestTokenWithType(seed, GENERIC_SUBJECT, subset)
 
 		/**
 		 * Returns the nearest object to the token that is descendant
@@ -519,10 +521,7 @@ package object nlp
 		{
 			val obj = nearestObject(seed)
 
-			if(obj.isEmpty)
-				nearestTokenWithType(seed, GENERIC_OBJECT)
-			else
-				obj
+			if(obj.isEmpty) nearestTokenWithType(seed, GENERIC_OBJECT) else obj
 		}
 
 		/**
@@ -610,7 +609,12 @@ package object nlp
 		 * Returns true if the token plays the role of a modifier in the sentence
 		 */
 		def isMod(token:Token):Boolean = depType(token).getOrElse("").contains("mod")
-		
+	
+		/**
+		Returns true if the token is an adjectival modifier 
+		*/
+		def isAdjMod(token:Token):Boolean = hasDepType(token, ADJ_MOD)
+
 		/*{
 			if(hasDepType(token))
 			{
@@ -1076,6 +1080,7 @@ package object nlp
 	val GENERIC_AUX = "aux"
 	val CAUSAL_COMPLEMENT = "xcomp"
 	val RELATIVE_CLAUSE = "rcmod"
+	val ADJ_MOD = "amod"
 	
 	val PUNCTUATION = Set(".", ",", ":")
 
