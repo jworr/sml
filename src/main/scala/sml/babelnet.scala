@@ -81,7 +81,7 @@ object babelnet
 		def hypernyms(id:SynsetId, useTransitive:Boolean=false):Iterable[SynsetId] =
 		{
 			val sql = if(useTransitive)
-				"select target from transitive_relation where source = ? and relation_type in (1,40) and (automatic is null or automatic = 0);"
+				"select target from transitive_relation where source = ? and relation_type in (1,40);"
 			else
 				"select target from relation where source = ? and relation_type in (1,40) and (automatic is null or automatic = 0);"
 
@@ -169,7 +169,7 @@ object babelnet
 	 */
 	def allSynsets(db:Connection):Iterable[SynsetId] =
 	{
-		val sql = "select id from synset where id not in (select source from thypernym) limit 100;"
+		val sql = "select id from synset where id not in (select source from transitive_relation where relation_type in (1,40,-1)) limit 1000;"
 
 		for(row <- prepareAndQuery(db, sql)) yield
 		{
