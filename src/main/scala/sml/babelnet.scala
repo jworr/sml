@@ -24,39 +24,25 @@ object babelnet
 		Returns all the synsets that have the specified lemma within the specified
 		top lemmas per synset
 		*/
-		def synsetSearch(lemma:String, pos:String, limit:Int):Iterable[SynsetId] =
+		def synsetSearch(lemma:String, pos:String):Iterable[SynsetId] =
 		{
-			val results = if(limit == -1)
-			{
-				val sql = """select l.synset_id 
-					from lemma l, synset s
-					where l.synset_id = s.id
-					and lemma = ? 
-					and pos = ?
-					and priority <= ?"""
+			val sql = """select synset_id 
+				from
+				disambiguation
+				where
+				phrase = ?
+				and pos = ?
+				"""
 
-				prepareAndQuery(conn, sql, lemma, pos, limit)
-			}
-			else
-			{
-				val sql = """select l.synset_id 
-					from lemma l, synset s
-					where l.synset_id = s.id
-					and lemma = ? 
-					and pos = ?"""
-
-				prepareAndQuery(conn, sql, lemma, pos)
-			}
+			val results = prepareAndQuery(conn, sql, lemma, pos)
 
 			//get all the results
 			for(row <- results) yield row.getString("synset_id")
 		}
 
-		def synsetSearch(lemma:String, pos:String):Iterable[SynsetId] = synsetSearch(lemma, pos, -1)
-
-		def synsetSearch(phrase:Seq[String], pos:String, limit:Int):Iterable[SynsetId] =
+		def synsetSearch(phrase:Seq[String], pos:String):Iterable[SynsetId] =
 		{
-			synsetSearch(toPhraseFromStr(phrase), pos, limit)
+			synsetSearch(toPhraseFromStr(phrase), pos)
 		}
 
 		/**
@@ -148,9 +134,9 @@ object babelnet
 		/**
 		Look up possible synsets for the given lemma
 		*/
-		def lemmaSynsets(lemma:String, pos:String, limit:Int):Iterable[SynsetId] =
+		def lemmaSynsets(lemma:String, pos:String):Iterable[SynsetId] =
 		{
-			db.synsetSearch(lemma, pos, limit)
+			db.synsetSearch(lemma, pos)
 		}
 	}
 
