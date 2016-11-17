@@ -16,10 +16,11 @@ object func
 
 		//if the object was found return it
 		if(index >= 0)
-			return Some(seq(index))
+			Some(seq(index))
+		
 		//else return None
 		else
-			return None
+			None
 	}
 
 	/**
@@ -35,7 +36,7 @@ object func
 	*/
 	def combinations2[A](items:Iterable[A]): Iterable[(A,A)] =
 	{
-		return items.toSeq.combinations(2).map(i => (i(0), i(1))).toIterable
+		items.toSeq.combinations(2).map(i => (i(0), i(1))).toIterable
 	}
 
 	/**
@@ -43,7 +44,7 @@ object func
 	*/
 	def combinations3[A](items:Iterable[A]): Iterable[(A,A,A)] =
 	{
-		return items.toSeq.combinations(3).map(i => (i(0), i(1), i(2))).toIterable
+		items.toSeq.combinations(3).map(i => (i(0), i(1), i(2))).toIterable
 	}
 
 	/**
@@ -51,7 +52,7 @@ object func
 	*/
 	def combinations4[A](items:Iterable[A]): Iterable[(A,A,A,A)] =
 	{
-		return items.toSeq.combinations(4).map(i => (i(0), i(1), i(2), i(3))).toIterable
+		items.toSeq.combinations(4).map(i => (i(0), i(1), i(2), i(3))).toIterable
 	}
 	
 	/**
@@ -67,7 +68,7 @@ object func
 	*/
 	def permutations2[A](items:Iterable[A]): Iterable[(A,A)] =
 	{
-		return permute(items,2).map(i => (i(0), i(1)))
+		permute(items,2).map(i => (i(0), i(1)))
 	}
 
 	/**
@@ -75,7 +76,7 @@ object func
 	*/
 	def permutations3[A](items:Iterable[A]): Iterable[(A,A,A)] =
 	{
-		return permute(items,3).map(i => (i(0), i(1), i(2)))
+		permute(items,3).map(i => (i(0), i(1), i(2)))
 	}
 
 	/**
@@ -83,7 +84,7 @@ object func
 	*/
 	def permutations4[A](items:Iterable[A]): Iterable[(A,A,A,A)] =
 	{
-		return permute(items,4).map(i => (i(0), i(1), i(2), i(3)))
+		permute(items,4).map(i => (i(0), i(1), i(2), i(3)))
 	}
 
 	/**
@@ -102,7 +103,7 @@ object func
 			}
 		}
 
-		return values.flatten
+		values.flatten
 	}
 
 	/**
@@ -135,7 +136,7 @@ object func
 
 		helper(List(), items)
 
-		return answer
+		answer
 	}
 
 	implicit class ExtendedSeq[T](val items:Seq[T])
@@ -164,7 +165,7 @@ object func
 				}
 			}
 
-			return helper(items, Vector())
+			helper(items, Vector())
 		}
 	}
 }

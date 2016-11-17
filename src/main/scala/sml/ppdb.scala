@@ -109,6 +109,9 @@ object ppdb
 	*/
 	class PPDBNode(phrase:String, score:Double, val synRules:Set[String]) 
 		extends Node(phrase, score)
+	{
+		override def toString:String = s"ppdb:'$phrase':$score"
+	}
 	
 	/**
 	Defines a traverser over PPDB
