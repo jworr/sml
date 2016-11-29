@@ -56,6 +56,29 @@ object knowledge
 	}
 
 	/**
+	Traverses over a group of traversers and returned the union of their
+	results
+	*/
+	class UnionTraverser(val traversers:Iterable[Traverser]) extends Traverser
+	{
+		/**
+		Returns true if the phrase is defined in the knowledge base
+		*/
+		def hasPhrase(phrase:String):Boolean =
+		{
+			traversers.exists(_.hasPhrase(phrase))
+		}
+		
+		/**
+		Returns all the phrases related to the given string
+		*/
+		def relatedPhrases(start:String):Set[String] =
+		{
+			traversers.flatMap(_.relatedPhrases(start)).toSet
+		}
+	}
+
+	/**
 	A node in a knowledge graph
 	*/
 	abstract class Node(val phrase:String, val score:Double)
