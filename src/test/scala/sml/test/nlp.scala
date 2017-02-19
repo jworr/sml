@@ -70,6 +70,36 @@ object nlp
 			token1.shareSentence(token2) should be (true)
 			token2.shareSentence(token1) should be (true)
 		}
+
+		it should "have a gap between the two phrases" in
+		{
+			val sent1 = testDoc.sentenceById(1)
+
+			val token1 = sent1.tokensById(Range(1,3))
+			val token2 = sent1.tokensById(Range(4,5))
+
+			token1.gap(token2) should be (Range(3,4))
+		}
+
+		it should "have no gap between the overlapping phrases" in
+		{
+			val sent1 = testDoc.sentenceById(1)
+
+			val token1 = sent1.tokensById(Range(1,3))
+			val token2 = sent1.tokensById(Range(2,4))
+
+			token1.gap(token2) should be (Range(0,0))
+		}
+
+		it should "have no gap between the adjance phrases" in
+		{
+			val sent1 = testDoc.sentenceById(1)
+
+			val token1 = sent1.tokensById(Range(1,3))
+			val token2 = sent1.tokensById(Range(3,5))
+
+			token1.gap(token2).isEmpty should be (true)
+		}
 	}
 
 	class SentenceSyntax extends FlatSpec with Matchers

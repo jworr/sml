@@ -31,6 +31,29 @@ object util
 	}
 
 	/**
+	Averages out the vectors
+	*/
+	def averageVecs(vecs:Iterable[Array[Double]]):Array[Double] =
+	{
+		val out = new Array[Double](vecs.headOption.map(_.size).getOrElse(0))
+
+		for(vec <- vecs)
+		{
+			for((value,i) <- vec.zipWithIndex)
+			{
+				out(i) += value
+			}
+		}
+
+		for(i <- Range(0,out.size))
+		{
+			out(i) /= vecs.size
+		}
+
+		out
+	}
+
+	/**
 	Creates a map from an iterable of non-unique tuples
 	*/
 	def tuplesToMap[T,S](tuples:Iterable[(T,S)]):Map[T,Iterable[S]] =

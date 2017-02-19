@@ -8,7 +8,7 @@ object queue
 	/**
 	 * Keeps a limited number of assignments in order based on their score
 	 */
-	case class BoundedQueue[T <: Ordered[T]](val limit:Int, items:Seq[T]=Seq()) extends Iterable[T]
+	class BoundedQueue[T <% Ordered[T]](val limit:Int, items:Seq[T]=Seq()) extends Iterable[T]
 	{
 		val queue = items
 
@@ -29,7 +29,7 @@ object queue
 				if(incremented.size > limit) incremented.tail else incremented
 			}
 
-			BoundedQueue(limit, newQueue)
+			new BoundedQueue(limit, newQueue)
 		}
 
 		/**
@@ -41,7 +41,7 @@ object queue
 			val start = scala.math.max(joined.size - limit, 0)
 			val newQueue = joined.slice(start, joined.size)
 
-			BoundedQueue(limit, newQueue)
+			new BoundedQueue(limit, newQueue)
 		}
 		
 		/**
@@ -84,6 +84,25 @@ object queue
 		 * Return an iterator over the queue
 		 */
 		def iterator:Iterator[T] = queue.iterator
+
+		/**
+		Check if two queues are equal to each other
+		*/
+		override def equals(obj:Any):Boolean = obj match
+		{
+			case q:BoundedQueue[T] =>
+			{
+				if(size == q.size)
+				{
+					items.zip(q).forall(p => p._1 == p._2)
+				}
+				else
+				{
+					false
+				}
+			}
+			case _ => false
+		}
 
 		/**
 		 * Return the queue as a string

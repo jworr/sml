@@ -768,7 +768,12 @@ package object nlp
 			else
 				return comp
 		}
-	
+
+		/**
+		Returns a more complete string
+		*/
+		def fullString:String = s"$id-$sentenceId-$word"
+
 		/**
 		Use the word as the token string
 		*/
@@ -813,6 +818,17 @@ package object nlp
 		}
 
 		/**
+		Assuming the phrase is in the same sentence, this returns all the
+		ids of the tokens in between the two
+		*/
+		def gap(other:Seq[Token]):Range =
+		{
+			val (left, right) = if(this.tokens < other) (this.tokens, other) else (other, this.tokens)
+			
+			Range(left.last.id + 1, right.head.id)
+		}
+
+		/**
 		 * Returns true if of one of the tokens is in a dependency tree
 		 */
 		def inDepTree(implicit doc:Document):Boolean =
@@ -846,12 +862,12 @@ package object nlp
 		 */
 		def compare(other:Seq[Token]):Int =
 		{
-			val sentCmp = tokens.map(_.sentenceId).min.compare(other.map(_.sentenceId).min)
+			val sentCmp = tokens.head.sentenceId.compare(other.head.sentenceId)
 
 			//first compare sentence ids, if there is a tie then go to tokens
 			if(sentCmp == 0)
 			{
-				tokens.map(_.id).min.compare(other.map(_.id).min)
+				tokens.head.id.compare(other.head.id)
 			}
 			else
 				sentCmp
@@ -1092,7 +1108,7 @@ package object nlp
 	val colors = Seq("green", "red", "blue", "yellow", "purple", "pink", "orange")
 
 	//stopwords
-	val stopwords = Set("a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "aren't", "as", "at", "be", "because", "been", "before", "being", "below", "between", "both", "but", "by", "can't", "cannot", "could", "couldn't", "did", "didn't", "do", "does", "doesn't", "doing", "don't", "down", "during", "each", "few", "for", "from", "further", "had", "hadn't", "has", "hasn't", "have", "haven't", "having", "he", "he'd", "he'll", "he's", "her", "here", "here's", "hers", "herself", "him", "himself", "his", "how", "how's", "i", "i'd", "i'll", "i'm", "i've", "if", "in", "into", "is", "isn't", "it", "it's", "its", "itself", "let's", "me", "more", "most", "mustn't", "my", "myself", "no", "nor", "not", "of", "off", "on", "once", "only", "or", "other", "ought", "our", "ourselves","out", "over", "own", "same", "shan't", "she", "she'd", "she'll", "she's", "should", "shouldn't", "so", "some", "such", "than", "that", "that's", "the", "their", "theirs", "them", "themselves", "then", "there", "there's", "these", "they", "they'd", "they'll", "they're", "they've", "this", "those", "through", "to", "too", "under", "until", "up", "very", "was", "wasn't", "we", "we'd", "we'll", "we're", "we've", "were", "weren't", "what", "what's", "when", "when's", "where", "where's", "which", "while", "who", "who's", "whom", "why", "why's", "with", "won't", "would", "wouldn't", "you", "you'd", "you'll", "you're", "you've", "your", "yours", "yourself", "yourselves", "'t", "'s", "'ll")
+	val stopwords = Set("a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "aren't", "as", "at", "be", "because", "been", "before", "being", "below", "between", "both", "but", "by", "can't", "cannot", "could", "couldn't", "did", "didn't", "do", "does", "doesn't", "doing", "don't", "down", "during", "each", "few", "for", "from", "further", "had", "hadn't", "has", "hasn't", "have", "haven't", "having", "he", "he'd", "he'll", "he's", "her", "here", "here's", "hers", "herself", "him", "himself", "his", "how", "how's", "i", "i'd", "i'll", "i'm", "i've", "if", "in", "into", "is", "isn't", "it", "it's", "its", "itself", "let's", "me", "more", "most", "mustn't", "my", "myself", "no", "nor", "not", "of", "off", "on", "once", "only", "or", "other", "ought", "our", "ourselves","out", "over", "own", "same", "shan't", "she", "she'd", "she'll", "she's", "should", "shouldn't", "so", "some", "such", "than", "that", "that's", "the", "their", "theirs", "them", "themselves", "then", "there", "there's", "these", "they", "they'd", "they'll", "they're", "they've", "this", "those", "through", "to", "too", "under", "until", "up", "very", "was", "wasn't", "we", "we'd", "we'll", "we're", "we've", "were", "weren't", "what", "what's", "when", "when's", "where", "where's", "which", "while", "who", "who's", "whom", "why", "why's", "with", "won't", "would", "wouldn't", "you", "you'd", "you'll", "you're", "you've", "your", "yours", "yourself", "yourselves", "'t", "'s", "'ll", "\"")
 							  
 	/**
 	Main Function to run a simple test

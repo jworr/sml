@@ -76,6 +76,20 @@ object knowledge
 		{
 			traversers.flatMap(_.relatedPhrases(start)).toSet
 		}
+
+		/**
+		Add in another traverser
+		*/
+		def +(trav:Traverser):UnionTraverser = 
+		{
+			val extra = trav match
+			{
+				case u:UnionTraverser => u.traversers
+				case t:Traverser => Seq(t)
+			}
+			
+			new UnionTraverser(traversers ++ extra)
+		}
 	}
 
 	/**
