@@ -33,7 +33,7 @@ object util
 	/**
 	Averages out the vectors
 	*/
-	def averageVecs(vecs:Iterable[Array[Double]]):Array[Double] =
+	def averageVecs(vecs:Iterable[Seq[Double]]):Seq[Double] =
 	{
 		val out = new Array[Double](vecs.headOption.map(_.size).getOrElse(0))
 
