@@ -54,6 +54,14 @@ object util
 	}
 
 	/**
+	Counts up the items in the collection
+	*/
+	def countItems[T,S](items:Iteralbe[T], getter:T => S=x => x):Map[S,Int] =
+	{
+		item.groupBy(getter).mapValues(_.size)
+	}
+
+	/**
 	Creates a map from an iterable of non-unique tuples
 	*/
 	def tuplesToMap[T,S](tuples:Iterable[(T,S)]):Map[T,Iterable[S]] =
