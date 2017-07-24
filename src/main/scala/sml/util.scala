@@ -56,9 +56,9 @@ object util
 	/**
 	Counts up the items in the collection
 	*/
-	def countItems[T,S](items:Iteralbe[T], getter:T => S=x => x):Map[S,Int] =
+	def countItems[T](items:Iterable[T]):Map[T,Int] =
 	{
-		item.groupBy(getter).mapValues(_.size)
+		items.groupBy(x => x).mapValues(_.size)
 	}
 
 	/**
