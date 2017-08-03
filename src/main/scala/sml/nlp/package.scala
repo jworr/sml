@@ -19,6 +19,11 @@ package object nlp
 {
 	class Document(val id: String, val sentences: Seq[Sentence], val corefGroups: Set[CorefGroup])
 	{
+		/*
+		Returns all the sentence ids
+		*/
+		def sentenceIds:Seq[Int] = sentences.map(_.id)
+
 		/*Returns the sentence specified by sentence id*/
 		def sentenceById(sentenceId: Int): Sentence = sentences(sentenceId -1)
 
